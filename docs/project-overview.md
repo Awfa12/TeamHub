@@ -262,7 +262,7 @@ public function users(): BelongsToMany
 1. User sends message via Livewire form
            │
            ▼
-2. MessageController creates Message model
+2. ChannelChat Livewire creates Message model
            │
            ▼
 3. MessageSent event dispatched to queue
@@ -271,16 +271,40 @@ public function users(): BelongsToMany
 4. Queue worker processes event
            │
            ▼
-5. Reverb broadcasts to private-channel.{id}
+5. Reverb broadcasts to presence-channel.{id}
            │
            ▼
-6. Echo.js receives event on subscribed clients
+6. Echo.join() receives event on subscribed clients
            │
            ▼
-7. Livewire @script calls $wire.messageReceived()
+7. Alpine dispatches event → $wire.messageReceived()
            │
            ▼
 8. UI updates instantly (no page refresh)
+```
+
+### Typing Indicators Flow
+
+```
+1. User types in textarea
+           │
+           ▼
+2. Debounced input event (300ms)
+           │
+           ▼
+3. Alpine sends whisper via presence channel
+           │
+           ▼
+4. Reverb relays whisper to other clients (no server)
+           │
+           ▼
+5. Other clients receive whisper event
+           │
+           ▼
+6. UI shows "X is typing..." with animated dots
+           │
+           ▼
+7. Auto-hide after 2 seconds of no activity
 ```
 
 ### Implemented Features
@@ -288,12 +312,14 @@ public function users(): BelongsToMany
 -   ✅ Real-time message delivery
 -   ✅ Optimistic UI updates for sender
 -   ✅ Duplicate message prevention (UUID-based)
--   ✅ Private channel authorization
+-   ✅ Presence channel authorization
+-   ✅ Typing indicators with whispers
+-   ✅ Auto-scroll to new messages
+-   ✅ Input clearing after send
 
 ### Planned Features
 
--   ⬜ Typing indicators (presence channels)
--   ⬜ Online/offline status
+-   ⬜ Online/offline status (who's viewing)
 -   ⬜ Message editing
 -   ⬜ Message deletion
 -   ⬜ File attachments

@@ -33,8 +33,9 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
+        // Use PresenceChannel to support typing indicators
         return [
-            new PrivateChannel('channel.' . $this->message->channel_id),
+            new PresenceChannel('channel.' . $this->message->channel_id),
         ];
     }
 

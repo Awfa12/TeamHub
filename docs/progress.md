@@ -14,12 +14,12 @@
 
 ## 📊 Progress Overview
 
-| Phase                           | Status      | Description                              |
-| ------------------------------- | ----------- | ---------------------------------------- |
-| **Phase 1: Foundation**         | ✅ Complete | Docker, Auth, Teams, Channels, Messaging |
-| **Phase 2: Enhanced Messaging** | 🔄 Up Next  | Typing, Presence, Edits, Files           |
-| **Phase 3: Advanced Features**  | ⏳ Planned  | Threads, Reactions, Search               |
-| **Phase 4: Production**         | ⏳ Planned  | Tests, Optimization, Deploy              |
+| Phase                           | Status         | Description                              |
+| ------------------------------- | -------------- | ---------------------------------------- |
+| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging |
+| **Phase 2: Enhanced Messaging** | 🔄 In Progress | Typing ✅, Presence, Edits, Files        |
+| **Phase 3: Advanced Features**  | ⏳ Planned     | Threads, Reactions, Search               |
+| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy              |
 
 ---
 
@@ -117,21 +117,30 @@ Issues encountered and resolved during development:
 | 7   | Livewire.js 404                     | Add Nginx location block for `/livewire/*`                     |
 | 8   | diffForHumans() on string           | Fetch Message model to get Carbon instances                    |
 | 9   | Multiple Alpine instances error     | Remove Alpine import from `app.js` - Livewire 3 bundles it     |
+| 10  | Presence vs Private channel mismatch | Use `PresenceChannel` in event when using `Echo.join()`       |
 
 > 📚 See [`real-time-messaging.md`](real-time-messaging.md) for detailed implementation guide.
 
 ---
 
-## 🔄 Phase 2: Enhanced Messaging (Up Next)
+## 🔄 Phase 2: Enhanced Messaging (In Progress)
 
-| Feature           | Priority | Status     |
-| ----------------- | -------- | ---------- |
-| Typing indicators | High     | ⏳ Planned |
-| Online presence   | High     | ⏳ Planned |
-| Message editing   | Medium   | ⏳ Planned |
-| Message deletion  | Medium   | ⏳ Planned |
-| File attachments  | Medium   | ⏳ Planned |
-| Image previews    | Low      | ⏳ Planned |
+| Feature           | Priority | Status      |
+| ----------------- | -------- | ----------- |
+| Typing indicators | High     | ✅ Complete |
+| Online presence   | High     | ⏳ Planned  |
+| Message editing   | Medium   | ⏳ Planned  |
+| Message deletion  | Medium   | ⏳ Planned  |
+| File attachments  | Medium   | ⏳ Planned  |
+| Image previews    | Low      | ⏳ Planned  |
+
+### ✅ Typing Indicators Implementation
+
+- **Presence channels** for real-time user tracking
+- **Whisper events** for typing (client-to-client, no server round-trip)
+- **Animated UI** with bouncing dots indicator
+- **Auto-hide** after 2 seconds of no typing
+- **Debounced** input (300ms) to prevent event spam
 
 ---
 

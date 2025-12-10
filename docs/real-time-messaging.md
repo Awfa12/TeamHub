@@ -414,6 +414,28 @@ import './bootstrap';
 
 > **Note**: When using Livewire 3, do NOT import Alpine separately. Livewire includes and manages Alpine automatically via `@livewireScripts`.
 
+### 10. Presence vs Private Channel Mismatch
+
+**Problem**: Messages sent from one browser didn't appear in another browser without refresh after switching to `Echo.join()` for typing indicators.
+
+**Solution**: When using `Echo.join()` (presence channel), the backend event must also broadcast on `PresenceChannel`, not `PrivateChannel`:
+
+```php
+// Before (broken) - MessageSent.php
+public function broadcastOn(): array
+{
+    return [new PrivateChannel('channel.' . $this->message->channel_id)];
+}
+
+// After (works) - MessageSent.php
+public function broadcastOn(): array
+{
+    return [new PresenceChannel('channel.' . $this->message->channel_id)];
+}
+```
+
+> **Key insight**: `Echo.private()` connects to `private-channel.X`, while `Echo.join()` connects to `presence-channel.X`. These are **different channels** - events sent to one won't be received on the other!
+
 ---
 
 ## Debugging Tips
@@ -462,9 +484,106 @@ docker compose exec -e HOME=/tmp app php artisan tinker
 
 ---
 
+---
+
+## Typing Indicators
+
+Typing indicators use **presence channels** and **whispers** for real-time, client-to-client communication without server round-trips.
+
+### How It Works
+
+1. User types in textarea → triggers debounced input event (300ms)
+2. Alpine sends a **whisper** via the presence channel
+3. Other connected clients receive the whisper
+4. UI shows "X is typing..." with animated dots
+5. Indicator auto-hides after 2 seconds of no typing
+
+### Channel Authorization (Presence)
+
+```php
+// routes/channels.php
+Broadcast::channel('channel.{channel}', function ($user, Channel $channel) {
+    // Check team membership
+    if (! $user->teams()->whereKey($channel->team_id)->exists()) {
+        return false;
+    }
+
+    // Check private channel membership
+    if ($channel->is_private && ! $channel->users()->whereKey($user->id)->exists()) {
+        return false;
+    }
+
+    // Return user data for presence channel
+    return [
+        'id' => $user->id,
+        'name' => $user->name,
+    ];
+});
+```
+
+### Event Broadcasting (PresenceChannel)
+
+```php
+// app/Events/MessageSent.php
+public function broadcastOn(): array
+{
+    // Must use PresenceChannel to match Echo.join()
+    return [
+        new PresenceChannel('channel.' . $this->message->channel_id),
+    ];
+}
+```
+
+### Frontend Implementation
+
+```javascript
+// Alpine x-data
+{
+    typingUsers: {},
+    channel: null,
+    
+    init() {
+        this.channel = Echo.join('channel.' + channelId)
+            .listen('.message.sent', (e) => { /* handle message */ })
+            .listenForWhisper('typing', (e) => {
+                this.userStartedTyping(e.userId, e.name);
+            });
+    },
+    
+    handleTyping() {
+        this.channel.whisper('typing', {
+            userId: currentUserId,
+            name: currentUserName
+        });
+    },
+    
+    userStartedTyping(userId, name) {
+        this.typingUsers[userId] = name;
+        // Auto-remove after 2 seconds
+        setTimeout(() => delete this.typingUsers[userId], 2000);
+    }
+}
+```
+
+### UI Component
+
+```blade
+<div x-show="Object.keys(typingUsers).length > 0" class="text-gray-500 italic">
+    <span class="flex gap-1">
+        <span class="animate-bounce">.</span>
+        <span class="animate-bounce" style="animation-delay: 150ms">.</span>
+        <span class="animate-bounce" style="animation-delay: 300ms">.</span>
+    </span>
+    <span x-text="Object.values(typingUsers).join(', ') + ' is typing...'"></span>
+</div>
+```
+
+---
+
 ## Next Steps
 
-- [ ] Add typing indicators (presence channels)
+- [x] ~~Add typing indicators (presence channels)~~
+- [ ] Add online presence (who's viewing the channel)
 - [ ] Add message editing
 - [ ] Add message deletion
 - [ ] Add file attachments
