@@ -208,7 +208,10 @@ class ChannelChat extends Component
         
         // Optimistic UI update for sender
         $this->chatMessages->push($message->load('user'));
-        $this->body = '';
+        
+        // Clear input and trigger scroll
+        $this->reset('body');
+        $this->dispatch('message-sent');
     }
 
     public function messageReceived(array $payload): void
@@ -222,6 +225,8 @@ class ChannelChat extends Component
         $message = Message::with('user')->find($payload['id']);
         if ($message) {
             $this->chatMessages->push($message);
+            // Trigger scroll for received messages
+            $this->dispatch('message-received');
         }
     }
 }
@@ -229,11 +234,27 @@ class ChannelChat extends Component
 
 ```blade
 {{-- resources/views/livewire/channel-chat.blade.php --}}
-<div>
-    {{-- Message list --}}
-    @foreach($chatMessages as $message)
-        <div>{{ $message->user->name }}: {{ $message->body }}</div>
-    @endforeach
+<div
+    x-data="{
+        scrollToBottom() {
+            const container = this.$refs.messagesContainer;
+            if (container) {
+                this.$nextTick(() => {
+                    container.scrollTop = container.scrollHeight;
+                });
+            }
+        }
+    }"
+    x-on:message-sent.window="scrollToBottom()"
+    x-on:message-received.window="scrollToBottom()"
+    x-init="scrollToBottom()"
+>
+    {{-- Scrollable message list --}}
+    <div x-ref="messagesContainer" class="max-h-[60vh] overflow-y-auto">
+        @foreach($chatMessages as $message)
+            <div>{{ $message->user->name }}: {{ $message->body }}</div>
+        @endforeach
+    </div>
 
     {{-- Send form --}}
     <form wire:submit="sendMessage">
@@ -251,6 +272,12 @@ class ChannelChat extends Component
 </script>
 @endscript
 ```
+
+**UX Features**:
+- Auto-scroll to bottom on page load (`x-init`)
+- Auto-scroll when sending messages (`x-on:message-sent.window`)
+- Auto-scroll when receiving messages from others (`x-on:message-received.window`)
+- Scrollable container with `max-h-[60vh]` for long message history
 
 ---
 
@@ -368,6 +395,24 @@ QUEUE_DRIVER=redis
 BROADCAST_CONNECTION=reverb
 QUEUE_CONNECTION=redis
 ```
+
+### 9. Multiple Alpine Instances Error
+
+**Problem**: Console showed `Detected multiple instances of Alpine running` which broke Livewire components completely.
+
+**Solution**: Livewire 3 bundles its own Alpine.js. Remove any manual Alpine imports from `app.js`:
+```javascript
+// Before (broken) - app.js
+import './bootstrap';
+import Alpine from 'alpinejs';
+window.Alpine = Alpine;
+Alpine.start();
+
+// After (works) - app.js
+import './bootstrap';
+```
+
+> **Note**: When using Livewire 3, do NOT import Alpine separately. Livewire includes and manages Alpine automatically via `@livewireScripts`.
 
 ---
 

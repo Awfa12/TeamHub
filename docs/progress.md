@@ -1,48 +1,223 @@
-## TeamHub Build Progress
+# TeamHub Development Progress
 
-Date: 2025-12-10 (dev environment)
+<p align="center">
+  <strong>Build log and milestone tracking for TeamHub</strong>
+</p>
 
-### Completed
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-In%20Development-blue?style=flat-square" alt="Status">
+  <img src="https://img.shields.io/badge/Phase-1%20Complete-success?style=flat-square" alt="Phase 1">
+  <img src="https://img.shields.io/badge/Last%20Updated-Dec%202025-lightgrey?style=flat-square" alt="Updated">
+</p>
 
--   Docker stack (PHP 8.4) with app (php-fpm), nginx, mysql 8.0, redis, queue worker, reverb, mailpit, minio. PHP image includes pdo_mysql, mbstring, bcmath, intl, pcntl, opcache, zip, xml, gd, redis. Nginx pointed to `public/` with try_files to index.php. Env set to service hostnames; storage/cache perms adjusted for Windows bind mounts.
--   Dev tooling: Mailpit on 8025/1025, MinIO on 9001/9000 with bucket `teamhub`, Reverb installed and running on 8081.
--   Auth & domain schema: migrations for teams, team_user pivot (roles owner/admin/member), channels (public/private), channel_user pivot; models wired with relations, casts, `ownedTeams` on User.
--   Policies & guards: TeamPolicy (view/viewAny/create/update/delete/manageMembers with roles), ChannelPolicy (view with team/private checks; create/update/delete for owner/admin). Middleware `team.member` and `channel.access` registered via bootstrap/app.php with proper web/api stacks restored.
--   Routing/UI: Team/channel routes nested by `{team:slug}` with access middleware. Blade views for dashboard, teams index/show, channels index/show using `<x-app-layout>`; channel create form hidden for non-admin/owner; manage link gated. Navbar has persistent "Teams" link.
--   Controllers: TeamController and ChannelController using AuthorizesRequests; channel listing respects public/private membership; channel create/update/archive actions authorized; slug uniqueness per team.
--   Seed data: users for each role (owner/admin/member), demo team, public `general` and private `leadership` channel; private channel membership for owner/admin.
--   Breeze installed (Blade), npm build done, migrations seeded.
--   **Real-time messaging fully working:**
-    -   `messages` table/model with UUID, body, file fields, soft deletes
-    -   `MessageSent` broadcast event implementing `ShouldBroadcast`
-    -   `MessageController@store` with auth checks, UUID generation, event dispatch
-    -   `ChannelChat` Livewire component with `@script` directive for Echo listener
-    -   Echo client configured in `bootstrap.js` with Reverb broadcaster
-    -   Broadcast channel authorization in `routes/channels.php`
-    -   Queue worker processing broadcast events via Redis
-    -   Reverb WebSocket server pushing events to connected clients
-    -   Messages appear instantly in all connected browsers without refresh
-    -   See `docs/real-time-messaging.md` for full implementation details and fixes
+---
 
-### Key Fixes Applied for Real-Time
+## 📊 Progress Overview
 
-1. **Vite env vars**: Use literal values for `VITE_*` (no `${VAR}` interpolation)
-2. **Livewire 3 Echo**: Use `@script` directive instead of `getListeners()` for Echo
-3. **Event name**: `.listen('.message.sent')` needs `.` prefix with `broadcastAs()`
-4. **Livewire 3 syntax**: `wire:submit` and `wire:model` (no `.prevent`/`.defer`)
-5. **Collection types**: Fetch actual Message model, not stdClass, to avoid serialization errors
-6. **Laravel 12 config**: `BROADCAST_CONNECTION` and `QUEUE_CONNECTION` (not `*_DRIVER`)
-7. **Nginx for Livewire**: Added location block for `/livewire/*.js` assets
+| Phase                           | Status      | Description                              |
+| ------------------------------- | ----------- | ---------------------------------------- |
+| **Phase 1: Foundation**         | ✅ Complete | Docker, Auth, Teams, Channels, Messaging |
+| **Phase 2: Enhanced Messaging** | 🔄 Up Next  | Typing, Presence, Edits, Files           |
+| **Phase 3: Advanced Features**  | ⏳ Planned  | Threads, Reactions, Search               |
+| **Phase 4: Production**         | ⏳ Planned  | Tests, Optimization, Deploy              |
 
-### Pending Checks
+---
 
--   None (baseline dev setup, RBAC scaffolding, and real-time messaging are done).
+## ✅ Phase 1: Foundation (Complete)
 
-### Next Implementation Steps
+### 🐳 Docker Environment
 
--   Add flash/status messages to channel manage actions (update/archive).
--   Add channel archive filtering in lists (hide archived by default).
--   Add typing indicators using presence channels.
--   Add message editing and deletion.
--   Add file attachments (integrate with MinIO).
--   Optional: env flag to restrict who can create teams; Mailpit test mail in a feature test; health checks for queue/reverb.
+| Component    | Status | Details                                                                             |
+| ------------ | ------ | ----------------------------------------------------------------------------------- |
+| PHP-FPM      | ✅     | PHP 8.4 with pdo_mysql, mbstring, bcmath, intl, pcntl, opcache, zip, xml, gd, redis |
+| Nginx        | ✅     | Port 8080, configured for Laravel with Livewire routes                              |
+| MySQL        | ✅     | Version 8.0, database `teamhub`                                                     |
+| Redis        | ✅     | Cache, sessions, queues                                                             |
+| Queue Worker | ✅     | Processing broadcast events                                                         |
+| Reverb       | ✅     | WebSocket server on port 8081                                                       |
+| Mailpit      | ✅     | Email testing on port 8025                                                          |
+| MinIO        | ✅     | S3-compatible storage on port 9001                                                  |
+
+### 🔐 Authentication & Authorization
+
+| Feature       | Status | Implementation                                                  |
+| ------------- | ------ | --------------------------------------------------------------- |
+| User Auth     | ✅     | Laravel Breeze (Blade)                                          |
+| Team Roles    | ✅     | Owner, Admin, Member via `team_user` pivot                      |
+| TeamPolicy    | ✅     | view, viewAny, create, update, delete, manageMembers            |
+| ChannelPolicy | ✅     | view (with private check), create, update, delete               |
+| Middleware    | ✅     | `team.member`, `channel.access` registered in bootstrap/app.php |
+
+### 📁 Database Schema
+
+| Table          | Status | Key Fields                                                         |
+| -------------- | ------ | ------------------------------------------------------------------ |
+| `users`        | ✅     | Standard Breeze fields                                             |
+| `teams`        | ✅     | name, slug, owner_id, settings (JSON), active                      |
+| `team_user`    | ✅     | team_id, user_id, role (enum), joined_at, last_seen_at             |
+| `channels`     | ✅     | team_id, name, slug, description, is_private, creator_id, archived |
+| `channel_user` | ✅     | channel_id, user_id, role (enum), joined_at                        |
+| `messages`     | ✅     | uuid, channel*id, user_id, body, file*\*, edited_at, soft deletes  |
+
+### 🎨 UI Components
+
+| View           | Status | Features                                          |
+| -------------- | ------ | ------------------------------------------------- |
+| Dashboard      | ✅     | Team list with channel counts                     |
+| Teams Index    | ✅     | List user's teams, create form                    |
+| Teams Show     | ✅     | Team details, channel link, manage link (gated)   |
+| Channels Index | ✅     | Public + private (if member), create form (gated) |
+| Channels Show  | ✅     | Real-time chat, manage section (gated)            |
+| Navigation     | ✅     | Persistent "Teams" link                           |
+
+### ⚡ Real-Time Messaging
+
+| Component            | Status | Details                                                            |
+| -------------------- | ------ | ------------------------------------------------------------------ |
+| Message Model        | ✅     | UUID, body, file fields, soft deletes                              |
+| MessageSent Event    | ✅     | Implements `ShouldBroadcast`, broadcasts to `private-channel.{id}` |
+| MessageController    | ✅     | Auth checks, UUID generation, event dispatch                       |
+| ChannelChat Livewire | ✅     | `@script` directive for Echo listener, auto-scroll, input clearing |
+| Echo Client          | ✅     | Configured in `bootstrap.js` with Reverb broadcaster               |
+| Channel Auth         | ✅     | `routes/channels.php` with team/channel membership checks          |
+| Queue Processing     | ✅     | Redis-backed, processing broadcast events                          |
+| WebSocket Server     | ✅     | Reverb pushing events to connected clients                         |
+
+**Result**: Messages appear instantly in all connected browsers without refresh! 🎉
+
+**UX Features**:
+
+-   ✅ Auto-scroll to bottom on new messages (sent or received)
+-   ✅ Input field clears after sending
+-   ✅ Scrollable message container with `max-h-[60vh]`
+
+### 🌱 Seed Data
+
+| Entity   | Count | Details                                                             |
+| -------- | ----- | ------------------------------------------------------------------- |
+| Users    | 9     | alice, bob, charlie, diana, eve, frank + owner, admin, member       |
+| Teams    | 5     | Acme Corp, Startup Squad, Demo Team, Design Collective, Old Project |
+| Channels | 15+   | Mix of public and private channels                                  |
+| Messages | ~30   | Sample messages in general channels                                 |
+
+---
+
+## 🔧 Key Technical Fixes
+
+Issues encountered and resolved during development:
+
+| #   | Issue                               | Solution                                                       |
+| --- | ----------------------------------- | -------------------------------------------------------------- |
+| 1   | Vite env vars not interpolating     | Use literal values for `VITE_*` (not `${VAR}`)                 |
+| 2   | Livewire 3 Echo listener not firing | Use `@script` directive instead of `getListeners()`            |
+| 3   | Event not received by client        | Add `.` prefix to event name: `.listen('.message.sent')`       |
+| 4   | Livewire 2 syntax errors            | Update to Livewire 3: `wire:submit` and `wire:model`           |
+| 5   | Collection serialization error      | Fetch actual Message model, not stdClass                       |
+| 6   | Broadcasting going to log           | Use `BROADCAST_CONNECTION` not `BROADCAST_DRIVER` (Laravel 12) |
+| 7   | Livewire.js 404                     | Add Nginx location block for `/livewire/*`                     |
+| 8   | diffForHumans() on string           | Fetch Message model to get Carbon instances                    |
+| 9   | Multiple Alpine instances error     | Remove Alpine import from `app.js` - Livewire 3 bundles it     |
+
+> 📚 See [`real-time-messaging.md`](real-time-messaging.md) for detailed implementation guide.
+
+---
+
+## 🔄 Phase 2: Enhanced Messaging (Up Next)
+
+| Feature           | Priority | Status     |
+| ----------------- | -------- | ---------- |
+| Typing indicators | High     | ⏳ Planned |
+| Online presence   | High     | ⏳ Planned |
+| Message editing   | Medium   | ⏳ Planned |
+| Message deletion  | Medium   | ⏳ Planned |
+| File attachments  | Medium   | ⏳ Planned |
+| Image previews    | Low      | ⏳ Planned |
+
+---
+
+## ⏳ Phase 3: Advanced Features (Planned)
+
+| Feature                   | Priority | Status     |
+| ------------------------- | -------- | ---------- |
+| Thread replies            | High     | ⏳ Planned |
+| Emoji reactions           | Medium   | ⏳ Planned |
+| Read receipts             | Medium   | ⏳ Planned |
+| Message search            | Medium   | ⏳ Planned |
+| Notifications             | Low      | ⏳ Planned |
+| Channel archive filtering | Low      | ⏳ Planned |
+
+---
+
+## ⏳ Phase 4: Production Ready (Planned)
+
+| Feature                      | Priority | Status     |
+| ---------------------------- | -------- | ---------- |
+| Unit tests                   | High     | ⏳ Planned |
+| Feature tests                | High     | ⏳ Planned |
+| API documentation            | Medium   | ⏳ Planned |
+| Performance optimization     | Medium   | ⏳ Planned |
+| Production deployment guide  | Medium   | ⏳ Planned |
+| Health checks (queue/reverb) | Low      | ⏳ Planned |
+
+---
+
+## 📝 Quick Reference
+
+### Test Accounts
+
+```
+All passwords: password
+
+alice@example.com   → Acme Corp (owner), Design Collective (member)
+bob@example.com     → Acme Corp (admin), Startup Squad (owner)
+charlie@example.com → Acme Corp (admin), Design Collective (owner)
+diana@example.com   → Acme Corp (member), Startup Squad (admin)
+eve@example.com     → Acme Corp (member), Startup Squad (member)
+frank@example.com   → Acme Corp (member), Design Collective (member)
+owner@example.com   → Demo Team (owner)
+admin@example.com   → Demo Team (admin)
+member@example.com  → Demo Team (member)
+```
+
+### Common Commands
+
+```bash
+# Start development environment
+docker compose up -d
+npm run dev
+
+# Reset database with fresh seed data
+docker compose exec app php artisan migrate:fresh --seed
+
+# View logs
+docker compose logs -f queue      # Queue worker
+docker compose logs -f reverb     # WebSocket server
+docker compose exec app tail -f storage/logs/laravel.log
+
+# Clear caches
+docker compose exec app php artisan optimize:clear
+```
+
+### Service URLs
+
+| Service       | URL                   |
+| ------------- | --------------------- |
+| Application   | http://localhost:8080 |
+| Mailpit       | http://localhost:8025 |
+| MinIO Console | http://localhost:9001 |
+
+---
+
+## 📚 Documentation
+
+| Document                                           | Description                          |
+| -------------------------------------------------- | ------------------------------------ |
+| [`project-overview.md`](project-overview.md)       | Architecture, tech stack, data model |
+| [`real-time-messaging.md`](real-time-messaging.md) | WebSocket implementation details     |
+| `progress.md`                                      | This file - build progress tracking  |
+
+---
+
+<p align="center">
+  <em>Last updated: December 2025</em>
+</p>

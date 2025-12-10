@@ -62,8 +62,9 @@ class ChannelChat extends Component
 
         $this->chatMessages->push($message->load('user'));
 
-        // Clear the input
-        $this->body = '';
+        // Clear the input and scroll to bottom
+        $this->reset('body');
+        $this->dispatch('message-sent');
     }
 
     public function messageReceived(array $payload): void
@@ -78,6 +79,8 @@ class ChannelChat extends Component
         
         if ($message) {
             $this->chatMessages->push($message);
+            // Notify frontend to scroll to bottom
+            $this->dispatch('message-received');
         }
     }
     public function render()

@@ -1,6 +1,23 @@
-<div>
+<div
+    x-data="{
+        scrollToBottom() {
+            const container = this.$refs.messagesContainer;
+            if (container) {
+                this.$nextTick(() => {
+                    container.scrollTop = container.scrollHeight;
+                });
+            }
+        }
+    }"
+    x-on:message-sent.window="scrollToBottom()"
+    x-on:message-received.window="scrollToBottom()"
+    x-init="scrollToBottom()"
+>
 
-    <div class="space-y-4 mb-6">
+    <div 
+        x-ref="messagesContainer"
+        class="space-y-4 mb-6 max-h-[60vh] overflow-y-auto scroll-smooth"
+    >
         @foreach($chatMessages as $message)
             <div class="p-3 bg-white rounded shadow-sm">
                 <div class="flex items-center space-x-2 mb-1">

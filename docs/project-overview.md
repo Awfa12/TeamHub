@@ -179,6 +179,79 @@ Roles: owner │ admin │ member ───────────────�
 | **Public**   | All team members can view and send messages              |
 | **Private**  | Only explicitly added members can view and send messages |
 
+### How Roles Work (Pivot Tables)
+
+Roles are **not stored on the User model**. Instead, they're stored in **pivot tables**, allowing users to have different roles in different teams.
+
+#### Team Roles (`team_user` pivot table)
+
+```sql
+team_user
+├── team_id      -- FK to teams
+├── user_id      -- FK to users
+├── role         -- 'owner' | 'admin' | 'member'
+├── joined_at    -- When user joined
+└── timestamps
+```
+
+**Example**: Alice can be `owner` of "Acme Corp" but just a `member` of "Design Collective".
+
+#### Channel Roles (`channel_user` pivot table)
+
+```sql
+channel_user
+├── channel_id   -- FK to channels
+├── user_id      -- FK to users
+├── role         -- 'owner' | 'participant'
+├── joined_at    -- When user was added
+└── timestamps
+```
+
+> **Note**: `channel_user` is only used for **private channels** to track membership.
+
+#### Accessing Roles in Code
+
+```php
+// Get user's role in a specific team
+$role = $user->teams()
+    ->where('team_id', $team->id)
+    ->first()
+    ->pivot
+    ->role;
+
+// Check if user is admin or owner
+$isAdmin = $user->teams()
+    ->where('team_id', $team->id)
+    ->whereIn('role', ['owner', 'admin'])
+    ->exists();
+
+// Attach user to team with role
+$user->teams()->attach($team->id, [
+    'role' => 'member',
+    'joined_at' => now(),
+]);
+```
+
+#### Model Relationships
+
+```php
+// User.php
+public function teams(): BelongsToMany
+{
+    return $this->belongsToMany(Team::class, 'team_user')
+        ->withPivot('role', 'joined_at', 'last_seen_at')
+        ->withTimestamps();
+}
+
+// Team.php
+public function users(): BelongsToMany
+{
+    return $this->belongsToMany(User::class, 'team_user')
+        ->withPivot('role', 'joined_at', 'last_seen_at')
+        ->withTimestamps();
+}
+```
+
 ---
 
 ## ⚡ Real-Time Features
