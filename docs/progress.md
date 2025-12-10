@@ -4,21 +4,22 @@ Date: 2025-12-10 (dev environment)
 
 ### Completed
 
--   Docker stack ready with PHP 8.4: app (php-fpm), nginx, mysql 8.0, redis, queue worker, reverb, mailpit, minio.
--   Base PHP image includes required extensions (pdo_mysql, mbstring, bcmath, intl, pcntl, opcache, zip, xml, gd, redis).
--   Nginx configured for Laravel (`public/`, try_files, PHP to app:9000).
--   Env aligned for containers (DB host=db, Redis host=redis, Reverb host=reverb:8081, Mailpit host=mailpit:1025, MinIO host=minio:9000).
--   Mailpit reachable on 8025; MinIO reachable on 9001 with bucket `teamhub`.
--   Reverb package installed and command namespace available.
--   App key generated, migrations run, `.env` set for Redis + S3/MinIO, storage/cache made writable (Windows bind mount: used `chmod -R 777 storage bootstrap/cache`).
+-   Docker stack (PHP 8.4) with app (php-fpm), nginx, mysql 8.0, redis, queue worker, reverb, mailpit, minio. PHP image includes pdo_mysql, mbstring, bcmath, intl, pcntl, opcache, zip, xml, gd, redis. Nginx pointed to `public/` with try_files to index.php. Env set to service hostnames; storage/cache perms adjusted for Windows bind mounts.
+-   Dev tooling: Mailpit on 8025/1025, MinIO on 9001/9000 with bucket `teamhub`, Reverb installed and running on 8081.
+-   Auth & domain schema: migrations for teams, team_user pivot (roles owner/admin/member), channels (public/private), channel_user pivot; models wired with relations, casts, `ownedTeams` on User.
+-   Policies & guards: TeamPolicy (view/viewAny/create/update/delete/manageMembers with roles), ChannelPolicy (view with team/private checks; create/update/delete for owner/admin). Middleware `team.member` and `channel.access` registered via bootstrap/app.php with proper web/api stacks restored.
+-   Routing/UI: Team/channel routes nested by `{team:slug}` with access middleware. Blade views for dashboard, teams index/show, channels index/show using `<x-app-layout>`; channel create form hidden for non-admin/owner; manage link gated. Navbar has persistent “Teams” link.
+-   Controllers: TeamController and ChannelController using AuthorizesRequests; channel listing respects public/private membership; channel create/update/archive actions authorized; slug uniqueness per team.
+-   Seed data: users for each role (owner/admin/member), demo team, public `general` and private `leadership` channel; private channel membership for owner/admin.
+-   Breeze installed (Blade), npm build done, migrations seeded.
 
 ### Pending Checks
 
--   None (all initial setup checks completed).
+-   None (baseline dev setup and RBAC scaffolding are done).
 
 ### Next Implementation Steps
 
--   Wire Echo/Reverb + Livewire scaffolding for real-time messaging.
--   Build authentication scaffold (e.g., Breeze) and team/channel domain models per SRS.
--   Add queue + reverb health checks in CI or a simple artisan command for readiness.
--   Set up Mailpit test mail in a feature test to validate SMTP path.
+-   Add flash/status messages to channel manage actions (update/archive).
+-   Wire real-time messaging: Livewire chat component + Echo/Reverb listeners; Message model/migration/events.
+-   Add channel archive filtering in lists (hide archived by default).
+-   Optional: env flag to restrict who can create teams; Mailpit test mail in a feature test; health checks for queue/reverb.
