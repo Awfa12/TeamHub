@@ -12,6 +12,7 @@ Date: 2025-12-10 (dev environment)
 -   Controllers: TeamController and ChannelController using AuthorizesRequests; channel listing respects public/private membership; channel create/update/archive actions authorized; slug uniqueness per team.
 -   Seed data: users for each role (owner/admin/member), demo team, public `general` and private `leadership` channel; private channel membership for owner/admin.
 -   Breeze installed (Blade), npm build done, migrations seeded.
+-   Messaging foundation: messages table/model/factory; `MessageSent` broadcast event; `MessageController@store` (auth checks, UUID, dispatch event); channel show page has a basic send form; broadcast queue running on Redis; Reverb service confirmed running.
 
 ### Pending Checks
 
@@ -20,6 +21,6 @@ Date: 2025-12-10 (dev environment)
 ### Next Implementation Steps
 
 -   Add flash/status messages to channel manage actions (update/archive).
--   Wire real-time messaging: Livewire chat component + Echo/Reverb listeners; Message model/migration/events.
+-   Wire real-time messaging: Livewire chat component + Echo/Reverb listeners on `private-channel.{id}`; render history and append on `message.sent`.
 -   Add channel archive filtering in lists (hide archived by default).
 -   Optional: env flag to restrict who can create teams; Mailpit test mail in a feature test; health checks for queue/reverb.

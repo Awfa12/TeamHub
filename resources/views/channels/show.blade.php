@@ -22,6 +22,21 @@
                 <p class="text-gray-600">Chat UI will go here (Livewire + Echo/Reverb).</p>
             </div>
 
+            <div class="bg-white shadow sm:rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-3">Send a message</h3>
+                <form method="POST" action="{{ route('channels.messages.store', [$team, $channel]) }}" class="space-y-3">
+                    @csrf
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Message</label>
+                        <textarea name="body" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>{{ old('body') }}</textarea>
+                        @error('body')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md">Send</button>
+                </form>
+            </div>
+
             @can('update', $channel)
                 <div class="bg-white shadow sm:rounded-lg p-6 space-y-4">
                     <h3 class="text-lg font-semibold">Manage Channel</h3>

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ChannelController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\MessageController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -41,6 +42,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::patch('/channel/{channel}', [ChannelController::class, 'update'])->name('channels.update');
                 Route::post('/channel/{channel}/archive', [ChannelController::class, 'archive'])->name('channels.archive');
                 Route::post('/channel/{channel}/unarchive', [ChannelController::class, 'unarchive'])->name('channels.unarchive');
+
+                Route::post('/channel/{channel}/messages', [MessageController::class, 'store'])->name('channels.messages.store');
             });
         });
 });
