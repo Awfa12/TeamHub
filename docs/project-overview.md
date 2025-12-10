@@ -1,47 +1,432 @@
-## TeamHub – Real-Time Collaboration Platform
+# TeamHub
 
-### What it is
-- Lightweight Slack-style app for teams: workspaces (teams), channels, DMs later, real-time chat, presence, file sharing, permissions.
-- Built to showcase modern Laravel real-time (Reverb), queues, and multi-tenancy by team.
+## Real-Time Team Collaboration Platform
 
-### Why it matters
-- Demonstrates event-driven architecture (WebSockets, queues) with instant UX.
-- Shows RBAC, multi-tenant data isolation, and background processing for uploads.
-- Recruiter-friendly demo: open two browsers and messages/presence sync instantly.
+<p align="center">
+  <strong>A modern, Slack-inspired collaboration platform built with Laravel 12</strong>
+</p>
 
-### Tech stack
-- Backend: Laravel 12, PHP 8.4, MySQL 8.0 (team/channel/message data), Redis (cache/queue/session).
-- Realtime: Laravel Reverb + Echo (WS server at 8081).
-- UI: Blade + Livewire (chat state), Tailwind.
-- Files: MinIO (S3-compatible) in dev; S3 in prod.
-- Mail: Mailpit in dev.
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/PHP-8.4-777BB4?style=flat-square&logo=php" alt="PHP 8.4">
+  <img src="https://img.shields.io/badge/Livewire-3-FB70A9?style=flat-square" alt="Livewire 3">
+  <img src="https://img.shields.io/badge/Tailwind-3-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql" alt="MySQL 8.0">
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis" alt="Redis">
+</p>
 
-### Core features (target)
-- Multi-team workspaces with roles: owner, admin, member (Spatie permissions).
-- Channels (public/private) scoped to teams; private membership via pivot.
-- Messaging with optimistic UI, edits, soft deletes, read receipts.
-- Presence channels per team; typing indicators.
-- File uploads via queue jobs, S3/MinIO storage, thumbnails for images.
-- Auth scaffold (Breeze) with team context in URLs: `/team/{slug}/channel/{id}`.
+---
 
-### Architecture notes
-- Multi-tenancy: single DB, team scoping enforced via middleware/policies; URLs carry team slug.
-- Broadcasting: events (MessageSent, FileUploaded, Typing, Presence) to private/presence channels; auth via broadcasting routes.
-- Queues: Redis-backed workers for uploads and other async tasks.
-- Storage: use `FILESYSTEM_DISK=s3` with path-style endpoints for MinIO in dev.
+## 🎯 Project Vision
 
-### Data model (high level)
-- Users, Teams, team_user pivot (role, joined_at, last_seen).
-- Channels (team_id, is_private, creator_id), channel_user pivot for private access.
-- Messages (channel_id, user_id, body, file fields, uuid, edited_at, soft delete).
-- Read receipts (message_id, user_id, read_at).
+TeamHub is a **production-ready** team collaboration platform demonstrating modern Laravel architecture patterns:
 
-### Dev environment (Docker)
-- Services: app (php-fpm), nginx (8080), mysql (3306), redis (6379), queue worker, reverb (8081), mailpit (8025/1025), minio (9000/9001).
-- `.env` aligns to service names (db, redis, reverb, mailpit, minio) with Redis for cache/session/queue.
+-   **Real-time messaging** with WebSockets (Laravel Reverb)
+-   **Event-driven architecture** with queues and broadcasting
+-   **Multi-tenant data isolation** with team-scoped resources
+-   **Role-based access control** (Owner → Admin → Member)
+-   **Optimistic UI updates** with Livewire 3
 
-### Demo storyline
-- Open two browsers on the same team: send messages, see instant delivery and presence.
-- Upload a file: message shows “uploading” then final link/preview after queue job.
-- Switch channels/teams to show isolation and permissions.
+> 💡 **Perfect for portfolios**: Open two browsers, send a message, and watch it appear instantly in both—no refresh needed.
 
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT LAYER                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Browser (Blade + Livewire 3 + Alpine.js + Tailwind CSS)                    │
+│     │                                                                        │
+│     ├── Laravel Echo (WebSocket Client)                                     │
+│     │      └── Subscribes to private-channel.{id}                           │
+│     │                                                                        │
+│     └── Livewire Components                                                 │
+│            └── @script directive bridges Echo → Livewire methods            │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            APPLICATION LAYER                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Laravel 12 (PHP 8.4)                                                        │
+│     │                                                                        │
+│     ├── Controllers (TeamController, ChannelController, MessageController)  │
+│     ├── Livewire Components (ChannelChat)                                   │
+│     ├── Policies (TeamPolicy, ChannelPolicy)                                │
+│     ├── Middleware (team.member, channel.access)                            │
+│     ├── Events (MessageSent implements ShouldBroadcast)                     │
+│     └── Models (User, Team, Channel, Message)                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+┌─────────────────────┐ ┌─────────────────┐ ┌─────────────────────┐
+│    MySQL 8.0        │ │     Redis       │ │   Laravel Reverb    │
+│    (Primary DB)     │ │  (Cache/Queue)  │ │   (WebSocket)       │
+├─────────────────────┤ ├─────────────────┤ ├─────────────────────┤
+│ • Users             │ │ • Session Store │ │ • Real-time events  │
+│ • Teams             │ │ • Cache Layer   │ │ • Private channels  │
+│ • Channels          │ │ • Queue Jobs    │ │ • Presence channels │
+│ • Messages          │ │ • Broadcasting  │ │ • Auth middleware   │
+│ • Pivot Tables      │ │                 │ │                     │
+└─────────────────────┘ └─────────────────┘ └─────────────────────┘
+```
+
+---
+
+## 🛠️ Technology Stack
+
+### Backend
+
+| Technology         | Version | Purpose                 |
+| ------------------ | ------- | ----------------------- |
+| **Laravel**        | 12.x    | PHP Framework           |
+| **PHP**            | 8.4     | Runtime                 |
+| **MySQL**          | 8.0     | Primary Database        |
+| **Redis**          | 7.x     | Cache, Sessions, Queues |
+| **Laravel Reverb** | 1.x     | WebSocket Server        |
+
+### Frontend
+
+| Technology       | Purpose                  |
+| ---------------- | ------------------------ |
+| **Livewire 3**   | Reactive Components      |
+| **Alpine.js**    | Lightweight JS Framework |
+| **Tailwind CSS** | Utility-First Styling    |
+| **Laravel Echo** | WebSocket Client         |
+| **Pusher.js**    | Echo Transport Layer     |
+
+### DevOps
+
+| Service     | Port | Purpose               |
+| ----------- | ---- | --------------------- |
+| **Nginx**   | 8080 | Web Server            |
+| **PHP-FPM** | 9000 | PHP Process Manager   |
+| **Reverb**  | 8081 | WebSocket Server      |
+| **Mailpit** | 8025 | Email Testing         |
+| **MinIO**   | 9001 | S3-Compatible Storage |
+
+---
+
+## 📊 Data Model
+
+```
+┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+│    Users    │       │    Teams    │       │  Channels   │
+├─────────────┤       ├─────────────┤       ├─────────────┤
+│ id          │──┐    │ id          │──┐    │ id          │
+│ name        │  │    │ name        │  │    │ team_id     │───┐
+│ email       │  │    │ slug        │  │    │ name        │   │
+│ password    │  │    │ owner_id    │──┼──┐ │ slug        │   │
+│ timestamps  │  │    │ settings    │  │  │ │ description │   │
+└─────────────┘  │    │ active      │  │  │ │ is_private  │   │
+                 │    │ timestamps  │  │  │ │ creator_id  │───┼──┐
+                 │    └─────────────┘  │  │ │ archived    │   │  │
+                 │           │         │  │ │ timestamps  │   │  │
+                 │           ▼         │  │ └─────────────┘   │  │
+                 │    ┌─────────────┐  │  │        │          │  │
+                 │    │  team_user  │  │  │        ▼          │  │
+                 │    ├─────────────┤  │  │ ┌─────────────┐   │  │
+                 └───▶│ team_id     │◀─┘  │ │channel_user │   │  │
+                 ┌───▶│ user_id     │     │ ├─────────────┤   │  │
+                 │    │ role        │     │ │ channel_id  │◀──┘  │
+                 │    │ joined_at   │     │ │ user_id     │◀─────┼──┐
+                 │    │ last_seen   │     │ │ role        │      │  │
+                 │    │ timestamps  │     │ │ joined_at   │      │  │
+                 │    └─────────────┘     │ │ timestamps  │      │  │
+                 │                        │ └─────────────┘      │  │
+                 │                        │                      │  │
+                 │    ┌─────────────┐     │                      │  │
+                 │    │  Messages   │     │                      │  │
+                 │    ├─────────────┤     │                      │  │
+                 │    │ id          │     │                      │  │
+                 │    │ uuid        │     │                      │  │
+                 │    │ channel_id  │◀────┘                      │  │
+                 └────│ user_id     │◀──────────────────────────┘  │
+                      │ body        │                              │
+                      │ file_*      │                              │
+                      │ edited_at   │                              │
+                      │ deleted_at  │                              │
+                      │ timestamps  │                              │
+                      └─────────────┘                              │
+                                                                   │
+Roles: owner │ admin │ member ─────────────────────────────────────┘
+```
+
+---
+
+## 🔐 Authorization Model
+
+### Team Roles & Permissions
+
+| Action                  | Owner | Admin | Member |
+| ----------------------- | :---: | :---: | :----: |
+| View team               |  ✅   |  ✅   |   ✅   |
+| Update team settings    |  ✅   |  ✅   |   ❌   |
+| Delete team             |  ✅   |  ❌   |   ❌   |
+| Manage members          |  ✅   |  ✅   |   ❌   |
+| Create channels         |  ✅   |  ✅   |   ❌   |
+| Update/archive channels |  ✅   |  ✅   |   ❌   |
+| Delete channels         |  ✅   |  ❌   |   ❌   |
+| Send messages           |  ✅   |  ✅   |   ✅   |
+
+### Channel Access
+
+| Channel Type | Access Rule                                              |
+| ------------ | -------------------------------------------------------- |
+| **Public**   | All team members can view and send messages              |
+| **Private**  | Only explicitly added members can view and send messages |
+
+---
+
+## ⚡ Real-Time Features
+
+### Message Broadcasting Flow
+
+```
+1. User sends message via Livewire form
+           │
+           ▼
+2. MessageController creates Message model
+           │
+           ▼
+3. MessageSent event dispatched to queue
+           │
+           ▼
+4. Queue worker processes event
+           │
+           ▼
+5. Reverb broadcasts to private-channel.{id}
+           │
+           ▼
+6. Echo.js receives event on subscribed clients
+           │
+           ▼
+7. Livewire @script calls $wire.messageReceived()
+           │
+           ▼
+8. UI updates instantly (no page refresh)
+```
+
+### Implemented Features
+
+-   ✅ Real-time message delivery
+-   ✅ Optimistic UI updates for sender
+-   ✅ Duplicate message prevention (UUID-based)
+-   ✅ Private channel authorization
+
+### Planned Features
+
+-   ⬜ Typing indicators (presence channels)
+-   ⬜ Online/offline status
+-   ⬜ Message editing
+-   ⬜ Message deletion
+-   ⬜ File attachments
+-   ⬜ Read receipts
+-   ⬜ Emoji reactions
+-   ⬜ Thread replies
+
+---
+
+## 🐳 Docker Environment
+
+### Services Overview
+
+```yaml
+services:
+    app: # PHP-FPM 8.4 with extensions
+    nginx: # Web server (port 8080)
+    db: # MySQL 8.0 (port 3306)
+    redis: # Cache/Queue/Session (port 6379)
+    queue: # Laravel queue worker
+    reverb: # WebSocket server (port 8081)
+    mailpit: # Email testing (port 8025)
+    minio: # S3-compatible storage (port 9001)
+```
+
+### Quick Start
+
+```bash
+# Clone and setup
+git clone <repo>
+cd teamhub
+cp .env.example .env
+
+# Start containers
+docker compose up -d
+
+# Install dependencies
+docker compose exec app composer install
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
+
+# Frontend
+npm install
+npm run dev
+
+# Access
+http://localhost:8080
+```
+
+### Test Accounts
+
+| Role   | Email              | Password |
+| ------ | ------------------ | -------- |
+| Owner  | owner@example.com  | password |
+| Admin  | admin@example.com  | password |
+| Member | member@example.com | password |
+
+---
+
+## 📁 Project Structure
+
+```
+teamhub/
+├── app/
+│   ├── Events/
+│   │   └── MessageSent.php          # Broadcast event
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── TeamController.php
+│   │   │   ├── ChannelController.php
+│   │   │   └── MessageController.php
+│   │   └── Middleware/
+│   │       ├── EnsureUserBelongsToTeam.php
+│   │       └── EnsureUserCanAccessChannel.php
+│   ├── Livewire/
+│   │   └── ChannelChat.php          # Real-time chat component
+│   ├── Models/
+│   │   ├── User.php
+│   │   ├── Team.php
+│   │   ├── Channel.php
+│   │   └── Message.php
+│   ├── Policies/
+│   │   ├── TeamPolicy.php
+│   │   └── ChannelPolicy.php
+│   └── Providers/
+│       ├── AuthServiceProvider.php
+│       └── BroadcastServiceProvider.php
+├── config/
+│   ├── broadcasting.php
+│   └── reverb.php
+├── database/
+│   ├── migrations/
+│   └── seeders/
+│       └── TeamSeeder.php
+├── docker/
+│   ├── nginx/
+│   │   └── site.conf
+│   └── php/
+│       ├── Dockerfile
+│       └── php.ini
+├── docs/
+│   ├── project-overview.md          # This file
+│   ├── progress.md                  # Build progress
+│   └── real-time-messaging.md       # Implementation details
+├── resources/
+│   ├── js/
+│   │   ├── app.js
+│   │   └── bootstrap.js             # Echo configuration
+│   └── views/
+│       ├── channels/
+│       ├── livewire/
+│       │   └── channel-chat.blade.php
+│       └── teams/
+├── routes/
+│   ├── web.php
+│   └── channels.php                 # Broadcast authorization
+├── docker-compose.yml
+└── .env
+```
+
+---
+
+## 🎬 Demo Walkthrough
+
+### 1. Multi-User Real-Time Chat
+
+```
+1. Open browser #1 → Login as owner@example.com
+2. Open browser #2 (incognito) → Login as admin@example.com
+3. Both navigate to: /team/demo-team/channel/1
+4. Send message from browser #1
+5. ✨ Message appears instantly in browser #2
+```
+
+### 2. Role-Based Access
+
+```
+1. Login as member@example.com
+2. Notice: No "Create Channel" button (members can't create)
+3. Notice: No "Manage Channel" section (members can't edit)
+4. Login as owner@example.com
+5. Full access to all management features
+```
+
+### 3. Private Channels
+
+```
+1. Login as member@example.com
+2. Navigate to /team/demo-team/channels
+3. Notice: "leadership" channel not visible (private, not a member)
+4. Login as owner@example.com
+5. "leadership" channel is visible (owner is a member)
+```
+
+---
+
+## 📚 Documentation
+
+| Document                                                | Description                             |
+| ------------------------------------------------------- | --------------------------------------- |
+| [`docs/progress.md`](progress.md)                       | Build progress and completed tasks      |
+| [`docs/real-time-messaging.md`](real-time-messaging.md) | Detailed real-time implementation guide |
+
+---
+
+## 🚀 Roadmap
+
+### Phase 1: Foundation ✅
+
+-   [x] Docker development environment
+-   [x] Authentication (Laravel Breeze)
+-   [x] Teams & Channels CRUD
+-   [x] Role-based permissions
+-   [x] Real-time messaging
+
+### Phase 2: Enhanced Messaging
+
+-   [ ] Typing indicators
+-   [ ] Online presence
+-   [ ] Message editing/deletion
+-   [ ] File attachments (MinIO)
+-   [ ] Image previews
+
+### Phase 3: Advanced Features
+
+-   [ ] Thread replies
+-   [ ] Emoji reactions
+-   [ ] Read receipts
+-   [ ] Message search
+-   [ ] Notifications
+
+### Phase 4: Production Ready
+
+-   [ ] Unit & feature tests
+-   [ ] API documentation
+-   [ ] Performance optimization
+-   [ ] Production deployment guide
+
+---
+
+## 📄 License
+
+This project is open-sourced for educational and portfolio purposes.
+
+---
+
+<p align="center">
+  Built with ❤️ using Laravel, Livewire, and Reverb
+</p>
