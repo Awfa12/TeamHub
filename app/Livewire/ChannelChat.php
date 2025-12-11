@@ -29,6 +29,8 @@ class ChannelChat extends Component
     public $body = ''; 
     public $chatMessages;
     public $file;
+    public string $searchTerm = '';
+    public $searchResults = [];
     
     // Edit mode properties
     public ?int $editingMessageId = null;
@@ -416,6 +418,61 @@ class ChannelChat extends Component
         }
 
         $this->refreshMessageReads($payload['message_id']);
+    }
+
+    public function searchMessages(): void
+    {
+        $term = trim($this->searchTerm);
+
+        if (strlen($term) < 2) {
+            $this->searchResults = [];
+            return;
+        }
+
+        $this->searchResults = Message::with(['user', 'parent.user'])
+            ->where('channel_id', $this->channelId)
+            ->whereNotNull('body')
+            ->where('body', 'like', '%' . $term . '%')
+            ->latest('id')
+            ->take(20)
+            ->get();
+    }
+
+    public function updatedSearchTerm($value): void
+    {
+        $term = trim($value);
+        if (strlen($term) >= 2) {
+            $this->searchMessages();
+        } else {
+            $this->searchResults = [];
+        }
+    }
+
+    public function clearSearch(): void
+    {
+        $this->searchTerm = '';
+        $this->searchResults = [];
+    }
+
+    public function jumpToMessage(int $messageId, ?int $parentId = null): void
+    {
+        // If it's a reply, ensure the parent thread is expanded and replies loaded
+        if ($parentId) {
+            $this->expandedThreads[$parentId] = true;
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($parentId) {
+                if ($msg->id === $parentId) {
+                    $msg->load(['replies.user', 'replies.reactions.user', 'replies.reads.user']);
+                }
+                return $msg;
+            });
+
+            $targetId = "reply-{$messageId}";
+        } else {
+            $targetId = "msg-{$messageId}";
+        }
+
+        // Dispatch to frontend to scroll
+        $this->dispatch('scroll-to-message', id: $targetId);
     }
 
     private function refreshMessageReactions(int $messageId): void

@@ -348,6 +348,7 @@ public function users(): BelongsToMany
 -   ✅ Thread replies (Slack-style flat threading)
 -   ✅ Emoji reactions (messages + replies)
 -   ✅ Read receipts (messages + replies, excludes self)
+-   ✅ Message search (channel-scoped, replies included)
 -   ✅ Emoji reactions (👍 ❤️ 😂 😮 😢 🎉)
 
 ### Planned Features
@@ -537,7 +538,7 @@ teamhub/
 -   [x] Thread replies
 -   [x] Emoji reactions
 -   [x] Read receipts
--   [ ] Message search
+-   [x] Message search
 -   [ ] Notifications
 
 ### Phase 4: Production Ready

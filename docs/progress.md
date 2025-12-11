@@ -18,7 +18,7 @@
 | ------------------------------- | -------------- | ----------------------------------------- |
 | **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging  |
 | **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files    |
-| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search |
+| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search ✅ |
 | **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy               |
 
 ---
@@ -123,7 +123,7 @@ Issues encountered and resolved during development:
 
 ---
 
-## 🔄 Phase 2: Enhanced Messaging (In Progress)
+## ✅ Phase 2: Enhanced Messaging (Complete)
 
 | Feature           | Priority | Status      |
 | ----------------- | -------- | ----------- |
@@ -186,7 +186,7 @@ Issues encountered and resolved during development:
 | Thread replies            | High     | ✅ Complete |
 | Emoji reactions           | Medium   | ✅ Complete |
 | Read receipts             | Medium   | ✅ Complete |
-| Message search            | Medium   | ⏳ Planned  |
+| Message search            | Medium   | ✅ Complete |
 | Notifications             | Low      | ⏳ Planned  |
 | Channel archive filtering | Low      | ⏳ Planned  |
 
@@ -219,6 +219,13 @@ Issues encountered and resolved during development:
 -   **Replies supported**: Read receipts shown inside threads
 -   **Seen by others**: Excludes yourself from the "Seen by" list
 -   **Tooltips**: Hover to see the list of viewers
+
+### ✅ Message Search Implementation
+
+-   **Channel-scoped search**: Filters messages within the channel
+-   **Debounced input**: 500ms debounce + Enter to search
+-   **Results panel**: Shows latest 20 matches with author, time, reply badge
+-   **Replies included**: Indicates reply target user when applicable
 
 ---
 

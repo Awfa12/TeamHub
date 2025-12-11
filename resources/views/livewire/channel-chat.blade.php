@@ -65,6 +65,19 @@
                 });
             }
         },
+
+        scrollToElement(targetId) {
+            const container = this.$refs.messagesContainer;
+            const el = document.getElementById(targetId);
+            if (container && el) {
+                this.$nextTick(() => {
+                    container.scrollTo({
+                        top: el.offsetTop - container.offsetTop - 12,
+                        behavior: 'smooth',
+                    });
+                });
+            }
+        },
         
         get typingNames() {
             return Object.values(this.typingUsers).filter(name => name).join(', ');
@@ -131,7 +144,40 @@
     x-on:echo-message-deleted.window="$wire.messageDeletedReceived($event.detail)"
     x-on:echo-reaction-toggled.window="$wire.reactionToggledReceived($event.detail)"
     x-on:echo-read-receipt.window="$wire.readReceiptReceived($event.detail)"
+    x-on:scroll-to-message.window="scrollToElement($event.detail.id)"
 >
+
+    {{-- Search bar --}}
+    <div class="mb-4 bg-white p-3 rounded shadow-sm">
+        <div class="flex items-center gap-2">
+            <input 
+                type="text"
+                wire:model.debounce.500ms="searchTerm"
+                wire:keydown.enter.prevent="searchMessages"
+                class="flex-1 border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-indigo-200"
+                placeholder="Search messages in this channel..."
+            />
+            <button 
+                type="button"
+                wire:click="searchMessages"
+                class="px-3 py-2 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition"
+            >
+                Search
+            </button>
+            <button 
+                type="button"
+                wire:click="clearSearch"
+                class="px-3 py-2 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition"
+            >
+                Clear
+            </button>
+        </div>
+        @if(strlen($searchTerm) > 1)
+            <p class="text-xs text-gray-500 mt-2">
+                Showing latest 20 matches for "{{ $searchTerm }}"
+            </p>
+        @endif
+    </div>
 
     {{-- Online users indicator --}}
     <div class="flex items-center justify-between mb-4 p-3 bg-white rounded shadow-sm">
@@ -157,12 +203,47 @@
         </div>
     </div>
 
+    {{-- Search results --}}
+    @if(strlen($searchTerm) > 1)
+        <div class="mb-4 bg-white p-3 rounded shadow-sm">
+            @if(count($searchResults) === 0)
+                <p class="text-sm text-gray-500">No matches found.</p>
+            @else
+                <p class="text-xs text-gray-500 mb-2">Results</p>
+                <div class="space-y-3">
+                    @foreach($searchResults as $result)
+                        <div class="p-2 bg-gray-50 rounded border border-gray-100">
+                            <div class="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                                <span class="font-semibold text-gray-900">{{ $result->user->name ?? 'Unknown' }}</span>
+                                <span class="text-xs text-gray-400">{{ $result->created_at?->diffForHumans() }}</span>
+                                @if($result->parent_id)
+                                    <span class="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">Reply</span>
+                                    @if($result->parent?->user)
+                                        <span class="text-xs text-gray-400">to {{ $result->parent->user->name }}</span>
+                                    @endif
+                                @endif
+                                <button 
+                                    type="button"
+                                    wire:click="jumpToMessage({{ $result->id }}, {{ $result->parent_id ?? 'null' }})"
+                                    class="ml-auto text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                                >
+                                    Go to
+                                </button>
+                            </div>
+                            <div class="text-sm text-gray-800 whitespace-pre-line">{{ \Illuminate\Support\Str::limit($result->body, 200) }}</div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    @endif
+
     <div 
         x-ref="messagesContainer"
         class="space-y-4 mb-6 max-h-[60vh] overflow-y-auto scroll-smooth"
     >
         @foreach($chatMessages as $message)
-            <div class="p-3 {{ $message->deleted_at ? 'bg-gray-100' : 'bg-white' }} rounded shadow-sm group" wire:key="message-{{ $message->id }}">
+            <div id="msg-{{ $message->id }}" class="p-3 {{ $message->deleted_at ? 'bg-gray-100' : 'bg-white' }} rounded shadow-sm group" wire:key="message-{{ $message->id }}">
                 @if($message->deleted_at)
                     {{-- Deleted message placeholder --}}
                     <div class="text-gray-400 italic text-sm flex items-center gap-2">
@@ -237,7 +318,7 @@
                     @else
                         {{-- Display mode --}}
                         @if($message->body)
-                            <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
+                <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
                         @endif
                         
                         {{-- File attachment --}}
@@ -375,7 +456,7 @@
                         @if(isset($expandedThreads[$message->id]) && $message->replies_count > 0)
                             <div class="mt-3 ml-4 pl-4 border-l-2 border-indigo-200 space-y-3">
                                 @forelse($message->replies ?? [] as $reply)
-                                    <div class="p-2 bg-gray-50 rounded {{ $reply->deleted_at ? 'opacity-60' : '' }}">
+                                    <div id="reply-{{ $reply->id }}" class="p-2 bg-gray-50 rounded {{ $reply->deleted_at ? 'opacity-60' : '' }}">
                                         @if($reply->deleted_at)
                                             <div class="text-gray-400 italic text-sm">This reply was deleted</div>
                                         @else
