@@ -57,10 +57,12 @@ jobs:
           php -r '$env=file_get_contents(".env"); $env=preg_replace("/^DB_USERNAME=.*/m","DB_USERNAME=root",$env); file_put_contents(".env",$env);'
           php -r '$env=file_get_contents(".env"); $env=preg_replace("/^DB_PASSWORD=.*/m","DB_PASSWORD=root",$env); file_put_contents(".env",$env);'
           php -r '$env=file_get_contents(".env"); $env=str_replace("REDIS_HOST=redis","REDIS_HOST=127.0.0.1",$env); file_put_contents(".env",$env);'
-          php -r '$env=file_get_contents(".env"); $env=str_replace("QUEUE_CONNECTION=redis","QUEUE_CONNECTION=redis",$env); file_put_contents(".env",$env);'
-          php -r '$env=file_get_contents(".env"); $env=str_replace("BROADCAST_CONNECTION=reverb","BROADCAST_CONNECTION=log",$env); file_put_contents(".env",$env);'
-          php -r '$env=file_get_contents(".env"); $env=str_replace("CACHE_STORE=redis","CACHE_STORE=redis",$env); file_put_contents(".env",$env);'
-          php -r '$env=file_get_contents(".env"); $env=str_replace("SESSION_DRIVER=redis","SESSION_DRIVER=redis",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^QUEUE_CONNECTION=.*/m","QUEUE_CONNECTION=sync",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^BROADCAST_CONNECTION=.*/m","BROADCAST_CONNECTION=log",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^CACHE_STORE=.*/m","CACHE_STORE=array",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^SESSION_DRIVER=.*/m","SESSION_DRIVER=array",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^APP_ENV=.*/m","APP_ENV=testing",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^MAIL_MAILER=.*/m","MAIL_MAILER=log",$env); file_put_contents(".env",$env);'
 
       - name: Migrate & seed
         run: php artisan migrate --seed
