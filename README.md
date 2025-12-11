@@ -123,6 +123,7 @@ Services:
 -   Architecture & data model: `docs/project-overview.md`
 -   Real-time messaging guide: `docs/real-time-messaging.md`
 -   API & integration quickref: `docs/api.md`
+-   Production deploy (Hostinger VPS): `docs/deploy-hostinger.md`
 
 ---
 

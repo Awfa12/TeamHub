@@ -252,7 +252,7 @@ Issues encountered and resolved during development:
 | Auth flows (Breeze) passing  | High     | ✅ Added                 |
 | API/documentation            | Medium   | ✅ Added                 |
 | Performance optimization     | Medium   | ✅ Added (indexes, gzip) |
-| Production deployment guide  | Medium   | ⏳ Planned               |
+| Production deployment guide  | Medium   | ✅ Added (Hostinger VPS) |
 | Health checks (queue/reverb) | Low      | ✅ Added                 |
 
 ### ✅ Testing Coverage (new)

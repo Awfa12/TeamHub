@@ -518,11 +518,12 @@ teamhub/
 
 ## 📚 Documentation
 
-| Document                                                | Description                             |
-| ------------------------------------------------------- | --------------------------------------- |
-| [`docs/progress.md`](progress.md)                       | Build progress and completed tasks      |
-| [`docs/real-time-messaging.md`](real-time-messaging.md) | Detailed real-time implementation guide |
-| [`docs/api.md`](api.md)                                 | HTTP routes, files, real-time channels  |
+| Document                                                | Description                                 |
+| ------------------------------------------------------- | ------------------------------------------- |
+| [`docs/progress.md`](progress.md)                       | Build progress and completed tasks          |
+| [`docs/real-time-messaging.md`](real-time-messaging.md) | Detailed real-time implementation guide     |
+| [`docs/api.md`](api.md)                                 | HTTP routes, files, real-time channels      |
+| [`docs/deploy-hostinger.md`](deploy-hostinger.md)       | Production deployment guide (Hostinger VPS) |
 
 ---
 
