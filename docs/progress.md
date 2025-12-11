@@ -19,7 +19,7 @@
 | **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging                                    |
 | **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files                                      |
 | **Phase 3: Advanced Features**  | ✅ Complete    | Threads, Reactions, Read Receipts, Search, Notifications, Archive filtering |
-| **Phase 4: Production**         | 🔄 In Progress | Tests, Optimization, Deploy                                                 |
+| **Phase 4: Production**         | 🔄 In Progress | Tests done; perf optimizations + health checks added; deploy guide pending  |
 
 ---
 
@@ -246,14 +246,14 @@ Issues encountered and resolved during development:
 
 ## 🔄 Phase 4: Production Ready (In Progress)
 
-| Feature                      | Priority | Status     |
-| ---------------------------- | -------- | ---------- |
-| Unit/feature tests           | High     | ✅ Added   |
-| Auth flows (Breeze) passing  | High     | ✅ Added   |
-| API/documentation            | Medium   | ✅ Added   |
-| Performance optimization     | Medium   | ⏳ Planned |
-| Production deployment guide  | Medium   | ⏳ Planned |
-| Health checks (queue/reverb) | Low      | ⏳ Planned |
+| Feature                      | Priority | Status                   |
+| ---------------------------- | -------- | ------------------------ |
+| Unit/feature tests           | High     | ✅ Added                 |
+| Auth flows (Breeze) passing  | High     | ✅ Added                 |
+| API/documentation            | Medium   | ✅ Added                 |
+| Performance optimization     | Medium   | ✅ Added (indexes, gzip) |
+| Production deployment guide  | Medium   | ⏳ Planned               |
+| Health checks (queue/reverb) | Low      | ✅ Added                 |
 
 ### ✅ Testing Coverage (new)
 
@@ -263,6 +263,13 @@ Issues encountered and resolved during development:
 -   Breeze auth/profile suite: login, register, password reset/update, email verification, profile update/delete all passing.
 -   Test harness tweaks: factories for Team/Channel, CSRF disabled in tests, session/cache array drivers, queue sync for deterministic mail.
 -   Command: `docker compose exec app php artisan test` (all green as of this update).
+
+### ⚙️ Production Hardening (updates)
+
+-   Added DB indexes: `messages(channel_id, created_at)`, `messages(parent_id, created_at)`, `reactions(message_id)`, `message_reads(message_id)`.
+-   Added health checks: `/health/queue` (queue connection), `/health/reverb` (Redis ping for Reverb), `/health/db` (MySQL ping).
+-   Enabled Nginx gzip for static assets with cache headers on CSS/JS/fonts/images.
+-   Added deploy helper: `scripts/deploy.sh` (build assets + cache config/routes/views).
 
 ---
 

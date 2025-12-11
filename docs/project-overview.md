@@ -545,7 +545,7 @@ teamhub/
 -   [x] File attachments (MinIO)
 -   [x] Image previews
 
-### Phase 3: Advanced Features 🔄
+### Phase 3: Advanced Features ✅
 
 -   [x] Thread replies
 -   [x] Emoji reactions
@@ -558,7 +558,7 @@ teamhub/
 
 -   [x] Unit & feature tests
 -   [x] API/documentation (internal)
--   [ ] Performance optimization
+-   [x] Performance optimization (indexes, gzip/static caching)
 -   [ ] Production deployment guide
 
 ---

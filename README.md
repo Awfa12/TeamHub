@@ -140,9 +140,10 @@ All passwords: `password`
 ## 🏁 Production Notes (current focus)
 
 -   Env: `QUEUE_CONNECTION=redis`, `BROADCAST_CONNECTION=reverb`, `CACHE_STORE=redis`, `SESSION_DRIVER=redis`, Mailpit/SMTP set
--   Indexes to add: `messages(channel_id, created_at)`, `reactions(message_id,user_id)`, `message_reads(message_id,user_id)`
--   Health checks: queue/reverb ping endpoints (planned)
--   Build: `php artisan config:cache route:cache view:cache` + `npm run build`
+-   Indexes: `messages(channel_id, created_at)`, `messages(parent_id, created_at)`, `reactions(message_id)`, `message_reads(message_id)` (added)
+-   Health checks: `/health/queue`, `/health/reverb` (Redis ping), `/health/db` (MySQL ping) — behind auth
+-   Build: `php artisan config:cache route:cache view:cache` + `npm run build` (see `scripts/deploy.sh`)
+-   Nginx: gzip enabled for static assets; cache headers for CSS/JS/fonts/images
 
 ---
 

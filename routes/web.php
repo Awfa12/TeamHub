@@ -7,6 +7,9 @@ use App\Http\Controllers\ChannelController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\FileController;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
     return view('welcome');
@@ -51,6 +54,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // File routes
     Route::get('/files/{message}', [FileController::class, 'show'])->name('files.show');
     Route::get('/files/{message}/download', [FileController::class, 'download'])->name('files.download');
+
+    // Health checks
+    Route::get('/health/queue', function () {
+        return Queue::getName() ? response()->json(['queue' => 'ok', 'connection' => config('queue.default')]) : response()->json(['queue' => 'ok']);
+    })->name('health.queue');
+
+    Route::get('/health/reverb', function () {
+        // Simple Redis ping for Reverb/Redis availability
+        try {
+            Redis::connection()->ping();
+            return response()->json(['reverb' => 'ok']);
+        } catch (\Throwable $e) {
+            return response()->json(['reverb' => 'failed', 'error' => $e->getMessage()], 500);
+        }
+    })->name('health.reverb');
+
+    Route::get('/health/db', function () {
+        try {
+            DB::select('select 1');
+            return response()->json(['db' => 'ok']);
+        } catch (\Throwable $e) {
+            return response()->json(['db' => 'failed', 'error' => $e->getMessage()], 500);
+        }
+    })->name('health.db');
 });
 
 require __DIR__.'/auth.php';
