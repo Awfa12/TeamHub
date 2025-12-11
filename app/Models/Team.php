@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Team extends Model
 {
-    
+    use HasFactory;
 
     protected $fillable = [
         'name',
@@ -20,6 +21,11 @@ class Team extends Model
     ];
 
     protected $casts = ['settings' => 'array', 'active' => 'bool'];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 
     public function owner(): BelongsTo
     {

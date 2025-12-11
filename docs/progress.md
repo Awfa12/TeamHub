@@ -14,12 +14,12 @@
 
 ## 📊 Progress Overview
 
-| Phase                           | Status         | Description                                                                          |
-| ------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
-| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging                                             |
-| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files                                               |
-| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search ✅, Notifications ✅, Archive filtering ✅ |
-| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy                                                          |
+| Phase                           | Status         | Description                                                                 |
+| ------------------------------- | -------------- | --------------------------------------------------------------------------- |
+| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging                                    |
+| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files                                      |
+| **Phase 3: Advanced Features**  | ✅ Complete    | Threads, Reactions, Read Receipts, Search, Notifications, Archive filtering |
+| **Phase 4: Production**         | 🔄 In Progress | Tests, Optimization, Deploy                                                 |
 
 ---
 
@@ -179,7 +179,7 @@ Issues encountered and resolved during development:
 
 ---
 
-## 🔄 Phase 3: Advanced Features (In Progress)
+## 🔄 Phase 3: Advanced Features (Complete)
 
 | Feature                   | Priority | Status      |
 | ------------------------- | -------- | ----------- |
@@ -244,16 +244,25 @@ Issues encountered and resolved during development:
 
 ---
 
-## ⏳ Phase 4: Production Ready (Planned)
+## 🔄 Phase 4: Production Ready (In Progress)
 
 | Feature                      | Priority | Status     |
 | ---------------------------- | -------- | ---------- |
-| Unit tests                   | High     | ⏳ Planned |
-| Feature tests                | High     | ⏳ Planned |
-| API documentation            | Medium   | ⏳ Planned |
+| Unit/feature tests           | High     | ✅ Added   |
+| Auth flows (Breeze) passing  | High     | ✅ Added   |
+| API/documentation            | Medium   | ⏳ Planned |
 | Performance optimization     | Medium   | ⏳ Planned |
 | Production deployment guide  | Medium   | ⏳ Planned |
 | Health checks (queue/reverb) | Low      | ⏳ Planned |
+
+### ✅ Testing Coverage (new)
+
+-   `ChannelAccessTest`: private channel visibility, archived toggle/banner, read-only.
+-   `MessageFlowTest`: post + reply, archive blocks sending, `parent_id` support in controller.
+-   `MailNotificationTest`: replies and @mentions send email (Mailpit) when notifications enabled.
+-   Breeze auth/profile suite: login, register, password reset/update, email verification, profile update/delete all passing.
+-   Test harness tweaks: factories for Team/Channel, CSRF disabled in tests, session/cache array drivers, queue sync for deterministic mail.
+-   Command: `docker compose exec app php artisan test` (all green as of this update).
 
 ---
 

@@ -108,6 +108,15 @@ TeamHub is a **production-ready** team collaboration platform demonstrating mode
 | **Mailpit** | 8025 | Email Testing         |
 | **MinIO**   | 9001 | S3-Compatible Storage |
 
+### Quality & Testing
+
+| Area                      | Status | Notes                                                         |
+| ------------------------- | ------ | ------------------------------------------------------------- |
+| Feature tests             | ✅     | Channel access, message flow (post/reply/archive block), mail notifications |
+| Auth/Profile (Breeze)     | ✅     | Login, register, email verify, password reset/update, profile update/delete |
+| Test harness              | ✅     | CSRF disabled in tests, queue sync, session/cache array drivers |
+| Command to run            | ✅     | `docker compose exec app php artisan test`                    |
+
 ---
 
 ## 📊 Data Model
