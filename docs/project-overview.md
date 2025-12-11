@@ -341,10 +341,10 @@ public function users(): BelongsToMany
 -   ✅ Auto-scroll to new messages
 -   ✅ Input clearing after send
 -   ✅ Online presence (who's viewing the channel)
+-   ✅ Message editing with "(edited)" indicator
 
 ### Planned Features
 
--   ⬜ Message editing
 -   ⬜ Message deletion
 -   ⬜ File attachments
 -   ⬜ Read receipts
@@ -523,7 +523,8 @@ teamhub/
 
 -   [x] Typing indicators
 -   [x] Online presence
--   [ ] Message editing/deletion
+-   [x] Message editing
+-   [ ] Message deletion
 -   [ ] File attachments (MinIO)
 -   [ ] Image previews
 

@@ -32,6 +32,10 @@
                     // Dispatch event to trigger Livewire update
                     window.dispatchEvent(new CustomEvent('echo-message-received', { detail: e }));
                 })
+                .listen('.message.updated', (e) => {
+                    // Dispatch event for message update
+                    window.dispatchEvent(new CustomEvent('echo-message-updated', { detail: e }));
+                })
                 .listenForWhisper('typing', (e) => {
                     component.userStartedTyping(e.userId, e.name);
                 });
@@ -90,6 +94,7 @@
     x-on:message-sent.window="scrollToBottom(); typingUsers = {}"
     x-on:message-received.window="scrollToBottom()"
     x-on:echo-message-received.window="$wire.messageReceived($event.detail)"
+    x-on:echo-message-updated.window="$wire.messageUpdatedReceived($event.detail)"
 >
 
     {{-- Online users indicator --}}
@@ -121,12 +126,59 @@
         class="space-y-4 mb-6 max-h-[60vh] overflow-y-auto scroll-smooth"
     >
         @foreach($chatMessages as $message)
-            <div class="p-3 bg-white rounded shadow-sm">
-                <div class="flex items-center space-x-2 mb-1">
-                    <span class="font-semibold text-gray-900">{{ $message->user->name ?? 'Unknown' }}</span>
-                    <span class="text-xs text-gray-400">{{ $message->created_at?->diffForHumans() }}</span>
+            <div class="p-3 bg-white rounded shadow-sm group" wire:key="message-{{ $message->id }}">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-semibold text-gray-900">{{ $message->user->name ?? 'Unknown' }}</span>
+                        <span class="text-xs text-gray-400">{{ $message->created_at?->diffForHumans() }}</span>
+                        @if($message->edited_at)
+                            <span class="text-xs text-gray-400 italic">(edited)</span>
+                        @endif
+                    </div>
+                    @if($message->user_id === auth()->id() && $editingMessageId !== $message->id)
+                        <button 
+                            wire:click="startEditing({{ $message->id }})"
+                            class="text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
+                    @endif
                 </div>
-                <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
+                
+                @if($editingMessageId === $message->id)
+                    {{-- Edit mode --}}
+                    <form wire:submit="updateMessage" class="mt-2">
+                        <textarea 
+                            wire:model="editBody"
+                            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-indigo-200 text-sm resize-y"
+                            rows="2"
+                            autofocus
+                        ></textarea>
+                        @error('editBody')
+                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                        <div class="flex gap-2 mt-2">
+                            <button 
+                                type="submit"
+                                class="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition"
+                            >
+                                Save
+                            </button>
+                            <button 
+                                type="button"
+                                wire:click="cancelEditing"
+                                class="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                @else
+                    {{-- Display mode --}}
+                    <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
+                @endif
             </div>
         @endforeach
     </div>

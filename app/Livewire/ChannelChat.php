@@ -9,6 +9,7 @@ use Livewire\Component;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Str;
 use App\Events\MessageSent;
+use App\Events\MessageUpdated;
 
 class ChannelChat extends Component
 {
@@ -20,6 +21,10 @@ class ChannelChat extends Component
     public int $channelId;
     public $body = ''; 
     public $chatMessages;
+    
+    // Edit mode properties
+    public ?int $editingMessageId = null;
+    public string $editBody = '';
 
     public function mount(Team $team, Channel $channel)
     {
@@ -83,6 +88,72 @@ class ChannelChat extends Component
             $this->dispatch('message-received');
         }
     }
+
+    public function startEditing(int $messageId): void
+    {
+        $message = $this->chatMessages->firstWhere('id', $messageId);
+        
+        if (!$message || $message->user_id !== auth()->id()) {
+            return;
+        }
+        
+        $this->editingMessageId = $messageId;
+        $this->editBody = $message->body;
+    }
+
+    public function cancelEditing(): void
+    {
+        $this->editingMessageId = null;
+        $this->editBody = '';
+    }
+
+    public function updateMessage(): void
+    {
+        if (!$this->editingMessageId) {
+            return;
+        }
+
+        $message = Message::find($this->editingMessageId);
+        
+        if (!$message || $message->user_id !== auth()->id()) {
+            $this->cancelEditing();
+            return;
+        }
+
+        $validated = $this->validate([
+            'editBody' => 'required|string|max:500',
+        ]);
+
+        $message->update([
+            'body' => $validated['editBody'],
+            'edited_at' => now(),
+        ]);
+
+        // Dispatch broadcast event
+        MessageUpdated::dispatch($message->fresh());
+
+        // Update local collection
+        $this->chatMessages = $this->chatMessages->map(function ($msg) use ($message) {
+            if ($msg->id === $message->id) {
+                return $message->fresh()->load('user');
+            }
+            return $msg;
+        });
+
+        $this->cancelEditing();
+    }
+
+    public function messageUpdatedReceived(array $payload): void
+    {
+        $this->chatMessages = $this->chatMessages->map(function ($msg) use ($payload) {
+            if ($msg->id === $payload['id']) {
+                // Fetch fresh message from DB
+                return Message::with('user')->find($payload['id']) ?? $msg;
+            }
+            return $msg;
+        });
+    }
+
     public function render()
     {
         return view('livewire.channel-chat');
