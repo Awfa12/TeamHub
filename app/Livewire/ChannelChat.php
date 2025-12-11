@@ -29,6 +29,10 @@ class ChannelChat extends Component
     // Edit mode properties
     public ?int $editingMessageId = null;
     public string $editBody = '';
+    
+    // Reply mode properties
+    public ?int $replyingToMessageId = null;
+    public array $expandedThreads = [];
 
     public function mount(Team $team, Channel $channel)
     {
@@ -36,8 +40,11 @@ class ChannelChat extends Component
         $this->channel = $channel;
         $this->teamId = $team->id;
         $this->channelId = $channel->id;
+        // Only load parent messages (not replies) - lazy load replies when expanded
         $this->chatMessages = Message::with('user')
+                        ->withCount('replies')
                         ->where('channel_id', $channel->id)
+                        ->whereNull('parent_id')
                         ->latest()->take(30)->get()->reverse()->values();
     }
 
@@ -82,33 +89,65 @@ class ChannelChat extends Component
             'uuid' => (string) Str::uuid(),
             'user_id' => $userId,
             'channel_id' => $channel->id,
+            'parent_id' => $this->replyingToMessageId,
             'body' => $this->body ?: null,
         ], $fileData));
 
         MessageSent::dispatch($message);
 
-        $this->chatMessages->push($message->load('user'));
+        // If it's a reply, add to parent's replies and expand thread
+        if ($this->replyingToMessageId) {
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($message) {
+                if ($msg->id === $this->replyingToMessageId) {
+                    $msg->load('replies.user');
+                    $msg->replies_count = $msg->replies->count();
+                }
+                return $msg;
+            });
+            $this->expandedThreads[$this->replyingToMessageId] = true;
+        } else {
+            // Add to main messages
+            $message->replies_count = 0;
+            $this->chatMessages->push($message->load('user'));
+        }
 
         // Clear the input and scroll to bottom
-        $this->reset(['body', 'file']);
+        $this->reset(['body', 'file', 'replyingToMessageId']);
         $this->dispatch('message-sent');
     }
 
     public function messageReceived(array $payload): void
     {
-        // avoid duplicates
-        if ($this->chatMessages->firstWhere('uuid', $payload['uuid'])) {
-            return;
-        }
-
         // Fetch the actual Message model to maintain collection type consistency
         $message = Message::with('user')->find($payload['id']);
         
-        if ($message) {
-            $this->chatMessages->push($message);
-            // Notify frontend to scroll to bottom
-            $this->dispatch('message-received');
+        if (!$message) {
+            return;
         }
+
+        // If it's a reply, update parent's reply count and load replies if expanded
+        if ($message->parent_id) {
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($message) {
+                if ($msg->id === $message->parent_id) {
+                    $msg->replies_count = ($msg->replies_count ?? 0) + 1;
+                    // Only load replies if thread is expanded
+                    if (isset($this->expandedThreads[$msg->id])) {
+                        $msg->load('replies.user');
+                    }
+                }
+                return $msg;
+            });
+        } else {
+            // avoid duplicates for main messages
+            if ($this->chatMessages->firstWhere('uuid', $payload['uuid'])) {
+                return;
+            }
+            $message->replies_count = 0;
+            $this->chatMessages->push($message);
+        }
+        
+        // Notify frontend to scroll to bottom
+        $this->dispatch('message-received');
     }
 
     public function startEditing(int $messageId): void
@@ -209,6 +248,46 @@ class ChannelChat extends Component
             }
             return $msg;
         });
+    }
+
+    public function startReply(int $messageId): void
+    {
+        $this->replyingToMessageId = $messageId;
+        $this->expandedThreads[$messageId] = true;
+        $this->dispatch('focus-message-input');
+    }
+
+    public function startReplyToReply(int $parentId, int $replyUserId, string $replyUserName): void
+    {
+        $this->replyingToMessageId = $parentId;
+        $this->expandedThreads[$parentId] = true;
+        // Pre-fill with @mention if replying to someone else
+        if ($replyUserId !== auth()->id()) {
+            $this->body = "@{$replyUserName} ";
+        }
+        $this->dispatch('focus-message-input');
+    }
+
+    public function cancelReply(): void
+    {
+        $this->replyingToMessageId = null;
+        $this->body = '';
+    }
+
+    public function toggleThread(int $messageId): void
+    {
+        if (isset($this->expandedThreads[$messageId])) {
+            unset($this->expandedThreads[$messageId]);
+        } else {
+            $this->expandedThreads[$messageId] = true;
+            // Load replies for this message (lazy loading)
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($messageId) {
+                if ($msg->id === $messageId && !$msg->relationLoaded('replies')) {
+                    $msg->load('replies.user');
+                }
+                return $msg;
+            });
+        }
     }
 
     public function render()

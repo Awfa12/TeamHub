@@ -271,6 +271,86 @@
                                 @endif
                             </div>
                         @endif
+                        
+                        {{-- Reply button and thread info --}}
+                        <div class="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100">
+                            <button 
+                                wire:click="startReply({{ $message->id }})"
+                                class="text-xs text-gray-400 hover:text-indigo-600 flex items-center gap-1 transition"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                </svg>
+                                Reply
+                            </button>
+                            
+                            @if($message->replies_count > 0)
+                                <button 
+                                    wire:click="toggleThread({{ $message->id }})"
+                                    class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1 transition"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 {{ isset($expandedThreads[$message->id]) ? 'rotate-90' : '' }} transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                    <span wire:loading.remove wire:target="toggleThread({{ $message->id }})">
+                                        {{ $message->replies_count }} {{ Str::plural('reply', $message->replies_count) }}
+                                    </span>
+                                    <span wire:loading wire:target="toggleThread({{ $message->id }})" class="text-gray-400">
+                                        Loading...
+                                    </span>
+                                </button>
+                            @endif
+                        </div>
+                        
+                        {{-- Expanded thread replies --}}
+                        @if(isset($expandedThreads[$message->id]) && $message->relationLoaded('replies') && $message->replies->count() > 0)
+                            <div class="mt-3 ml-4 pl-4 border-l-2 border-indigo-200 space-y-3">
+                                @foreach($message->replies as $reply)
+                                    <div class="p-2 bg-gray-50 rounded {{ $reply->deleted_at ? 'opacity-60' : '' }}">
+                                        @if($reply->deleted_at)
+                                            <div class="text-gray-400 italic text-sm">This reply was deleted</div>
+                                        @else
+                                            <div class="flex items-center space-x-2 mb-1">
+                                                <span class="font-semibold text-gray-900 text-sm">{{ $reply->user->name ?? 'Unknown' }}</span>
+                                                <span class="text-xs text-gray-400">{{ $reply->created_at?->diffForHumans() }}</span>
+                                                @if($reply->edited_at)
+                                                    <span class="text-xs text-gray-400 italic">(edited)</span>
+                                                @endif
+                                            </div>
+                                            @if($reply->body)
+                                                <div class="text-gray-800 text-sm whitespace-pre-line">{{ $reply->body }}</div>
+                                            @endif
+                                            {{-- Reply to this reply (adds to same thread) --}}
+                                            <button 
+                                                wire:click="startReplyToReply({{ $message->id }}, {{ $reply->user_id }}, '{{ addslashes($reply->user->name ?? 'Unknown') }}')"
+                                                class="text-xs text-gray-400 hover:text-indigo-600 mt-1 flex items-center gap-1"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                </svg>
+                                                Reply
+                                            </button>
+                                            @if($reply->file_path)
+                                                <div class="mt-1">
+                                                    @if($reply->is_image)
+                                                        <a href="{{ $reply->file_url }}" target="_blank">
+                                                            <img src="{{ $reply->file_url }}" alt="{{ $reply->file_name }}" class="max-w-[200px] max-h-32 rounded">
+                                                        </a>
+                                                    @else
+                                                        <a href="{{ $reply->download_url }}" class="text-xs text-indigo-500 hover:underline flex items-center gap-1">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                            </svg>
+                                                            {{ $reply->file_name }}
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     @endif
                 @endif
             </div>
@@ -296,13 +376,50 @@
         <span x-text="typingNames + ' is typing...'"></span>
     </div>
 
-    <form wire:submit="sendMessage" class="bg-white p-4 rounded shadow-sm" x-data="{ fileName: null }">
+    <form 
+        wire:submit="sendMessage" 
+        class="bg-white p-4 rounded shadow-sm" 
+        x-data="{ fileName: null }"
+        x-on:focus-message-input.window="$nextTick(() => $refs.messageInput?.focus())"
+    >
+        {{-- Replying indicator --}}
+        @if($replyingToMessageId)
+            @php
+                $replyingToMessage = $chatMessages->firstWhere('id', $replyingToMessageId);
+            @endphp
+            <div class="flex items-center justify-between p-2 mb-3 bg-indigo-50 border-l-4 border-indigo-500 rounded-r">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                    <span class="text-sm text-indigo-700">
+                        Replying to <strong>{{ $replyingToMessage?->user?->name ?? 'message' }}</strong>
+                    </span>
+                    @if($replyingToMessage?->body)
+                        <span class="text-xs text-indigo-500 truncate max-w-[200px]">
+                            "{{ Str::limit($replyingToMessage->body, 40) }}"
+                        </span>
+                    @endif
+                </div>
+                <button 
+                    type="button"
+                    wire:click="cancelReply"
+                    class="text-indigo-400 hover:text-indigo-600 transition"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        @endif
+        
         <div>
             <textarea 
                 wire:model="body"
+                x-ref="messageInput"
                 x-on:input.debounce.300ms="handleTyping()"
                 class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-indigo-200 min-h-[48px] resize-y"
-                placeholder="Write a message..."
+                placeholder="{{ $replyingToMessageId ? 'Write a reply...' : 'Write a message...' }}"
                 rows="2"
             ></textarea>
             @error('body')

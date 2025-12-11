@@ -345,11 +345,13 @@ public function users(): BelongsToMany
 -   ✅ Message deletion with custom modal
 -   ✅ File attachments with MinIO storage
 -   ✅ Image previews with download links
+-   ✅ Thread replies (Slack-style flat threading)
 
 ### Planned Features
--   ⬜ Read receipts
+
 -   ⬜ Emoji reactions
--   ⬜ Thread replies
+-   ⬜ Read receipts
+-   ⬜ Message search
 
 ---
 
@@ -528,9 +530,9 @@ teamhub/
 -   [x] File attachments (MinIO)
 -   [x] Image previews
 
-### Phase 3: Advanced Features
+### Phase 3: Advanced Features 🔄
 
--   [ ] Thread replies
+-   [x] Thread replies
 -   [ ] Emoji reactions
 -   [ ] Read receipts
 -   [ ] Message search

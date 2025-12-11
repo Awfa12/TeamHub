@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,6 +17,7 @@ class Message extends Model
     protected $fillable = [
         'uuid',
         'channel_id',
+        'parent_id',
         'user_id',
         'body',
         'file_name',
@@ -37,6 +39,38 @@ class Message extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the parent message (for thread replies)
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Message::class, 'parent_id');
+    }
+
+    /**
+     * Get replies to this message
+     */
+    public function replies(): HasMany
+    {
+        return $this->hasMany(Message::class, 'parent_id')->with('user')->orderBy('created_at');
+    }
+
+    /**
+     * Get the count of replies
+     */
+    public function getRepliesCountAttribute(): int
+    {
+        return $this->replies()->count();
+    }
+
+    /**
+     * Check if this is a thread reply
+     */
+    public function getIsReplyAttribute(): bool
+    {
+        return $this->parent_id !== null;
     }
 
     /**

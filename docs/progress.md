@@ -18,6 +18,7 @@
 | ------------------------------- | -------------- | ---------------------------------------- |
 | **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging |
 | **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files   |
+| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions, Search             |
 | **Phase 3: Advanced Features**  | ⏳ Planned     | Threads, Reactions, Search               |
 | **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy              |
 
@@ -179,16 +180,27 @@ Issues encountered and resolved during development:
 
 ---
 
-## ⏳ Phase 3: Advanced Features (Planned)
+## 🔄 Phase 3: Advanced Features (In Progress)
 
-| Feature                   | Priority | Status     |
-| ------------------------- | -------- | ---------- |
-| Thread replies            | High     | ⏳ Planned |
-| Emoji reactions           | Medium   | ⏳ Planned |
-| Read receipts             | Medium   | ⏳ Planned |
-| Message search            | Medium   | ⏳ Planned |
-| Notifications             | Low      | ⏳ Planned |
-| Channel archive filtering | Low      | ⏳ Planned |
+| Feature                   | Priority | Status      |
+| ------------------------- | -------- | ----------- |
+| Thread replies            | High     | ✅ Complete |
+| Emoji reactions           | Medium   | ⏳ Planned  |
+| Read receipts             | Medium   | ⏳ Planned  |
+| Message search            | Medium   | ⏳ Planned  |
+| Notifications             | Low      | ⏳ Planned  |
+| Channel archive filtering | Low      | ⏳ Planned  |
+
+### ✅ Thread Replies Implementation
+
+- **Slack-style flat threading**: Replies go to parent message, not nested
+- **Reply button**: On every message and reply
+- **@mention pre-fill**: When replying to a reply, @Username is added
+- **Expand/collapse**: Click reply count to show/hide thread
+- **Lazy loading**: Replies loaded only when expanded
+- **Optimized queries**: Uses `withCount()` instead of loading all replies
+- **Real-time updates**: New replies appear instantly
+- **Reply indicator**: Shows "Replying to..." with preview
 
 ---
 
