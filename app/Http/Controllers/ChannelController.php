@@ -16,6 +16,7 @@ class ChannelController extends Controller
     {
         $this->authorize('view', $team);
         $user = $request->user();
+        $showArchived = $request->boolean('show_archived', false);
 
         // Public channels for the team + private channels the user belongs to
         $channels = Channel::where('team_id', $team->id)
@@ -23,10 +24,16 @@ class ChannelController extends Controller
                 $q->where('is_private', false)
                   ->orWhereHas('users', fn ($u) => $u->whereKey($user->id));
             })
+            ->when(! $showArchived, fn ($q) => $q->where('archived', false))
+            ->orderBy('archived')
             ->orderBy('name')
             ->get();
 
-        return view('channels.index', compact('channels', 'team'));
+        return view('channels.index', [
+            'channels' => $channels,
+            'team' => $team,
+            'showArchived' => $showArchived,
+        ]);
     }
 
     public function store(Request $request, Team $team)

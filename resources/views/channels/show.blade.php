@@ -11,6 +11,14 @@
                 <div>
                     <p class="text-sm text-gray-500">Team: {{ $team->name }}</p>
                     <p class="text-sm text-gray-500">{{ $channel->is_private ? 'Private channel' : 'Public channel' }}</p>
+                    @if($channel->archived)
+                        <div class="mt-2 text-xs text-red-600 bg-red-50 inline-flex items-center gap-2 px-2.5 py-1 rounded">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m2 8H7a2 2 0 01-2-2V6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v10a2 2 0 01-2 2z" />
+                            </svg>
+                            Archived (read-only)
+                        </div>
+                    @endif
                 </div>
                 <div class="space-x-3">
                     <a href="{{ route('channels.index', $team) }}" class="text-indigo-600 hover:underline">Back to channels</a>

@@ -35,6 +35,7 @@ class ChannelChat extends Component
     public string $searchTerm = '';
     public $searchResults = [];
     public bool $notificationEmailsEnabled = true;
+    public bool $channelArchived = false;
     
     // Edit mode properties
     public ?int $editingMessageId = null;
@@ -54,6 +55,7 @@ class ChannelChat extends Component
         $this->teamId = $team->id;
         $this->channelId = $channel->id;
         $this->notificationEmailsEnabled = (bool) (auth()->user()->notification_emails ?? true);
+        $this->channelArchived = (bool) $channel->archived;
         // Only load parent messages (not replies) - lazy load replies when expanded
         $this->chatMessages = Message::with(['user', 'reactions.user', 'reads.user'])
                         ->withCount('replies')
@@ -66,6 +68,10 @@ class ChannelChat extends Component
 
     public function sendMessage()
     {
+        if ($this->channelArchived) {
+            $this->addError('body', 'Channel is archived (read-only).');
+            return;
+        }
         // Authorize user to view team and channel
         $team = Team::findOrFail($this->teamId);
         $channel = Channel::findOrFail($this->channelId);

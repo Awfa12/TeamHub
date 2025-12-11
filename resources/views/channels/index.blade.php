@@ -41,13 +41,26 @@
                 </div>
             @endcan
 
-            <div class="bg-white shadow sm:rounded-lg p-4">
-                <h2 class="text-lg font-medium mb-3">Channels</h2>
+            <div class="bg-white shadow sm:rounded-lg p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-medium">Channels</h2>
+                    <form method="GET" class="flex items-center gap-2">
+                        <label class="inline-flex items-center space-x-2 text-sm text-gray-600">
+                            <input type="checkbox" name="show_archived" value="1" {{ $showArchived ? 'checked' : '' }} onchange="this.form.submit()" class="rounded border-gray-300">
+                            <span>Show archived</span>
+                        </label>
+                    </form>
+                </div>
                 <ul class="divide-y divide-gray-200">
                     @forelse($channels as $channel)
                         <li class="py-2 flex items-center justify-between">
                             <div>
-                                <div class="font-semibold">{{ $channel->name }}</div>
+                                <div class="font-semibold flex items-center gap-2">
+                                    <span>{{ $channel->name }}</span>
+                                    @if($channel->archived)
+                                        <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">Archived</span>
+                                    @endif
+                                </div>
                                 <div class="text-sm text-gray-500">
                                     {{ $channel->is_private ? 'Private' : 'Public' }}
                                 </div>

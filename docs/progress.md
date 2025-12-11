@@ -14,12 +14,12 @@
 
 ## 📊 Progress Overview
 
-| Phase                           | Status         | Description                                                    |
-| ------------------------------- | -------------- | -------------------------------------------------------------- |
-| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging                       |
-| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files                         |
-| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search ✅, Notifications ✅ |
-| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy                                    |
+| Phase                           | Status         | Description                                                                          |
+| ------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging                                             |
+| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files                                               |
+| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search ✅, Notifications ✅, Archive filtering ✅ |
+| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy                                                          |
 
 ---
 
@@ -188,7 +188,7 @@ Issues encountered and resolved during development:
 | Read receipts             | Medium   | ✅ Complete |
 | Message search            | Medium   | ✅ Complete |
 | Notifications             | Low      | ✅ Complete |
-| Channel archive filtering | Low      | ⏳ Planned  |
+| Channel archive filtering | Low      | ✅ Complete |
 
 ### ✅ Thread Replies Implementation
 
@@ -233,6 +233,14 @@ Issues encountered and resolved during development:
 -   **User toggle**: Persistent `notification_emails` flag on User
 -   **Queue-backed**: Uses queue worker + Mailpit SMTP (port 1025)
 -   **Browser toasts**: In-app toasts for @mentions (non-sender)
+
+### ✅ Channel Archive Filtering
+
+-   **Default hidden**: Archived channels hidden in list by default
+-   **Show archived toggle**: Checkbox to reveal archived channels
+-   **Badges**: “Archived” badge in channel list
+-   **Channel banner**: “Archived (read-only)” shown on channel page
+-   **Send blocked**: Message form hidden and server-side blocked in archived channels
 
 ---
 

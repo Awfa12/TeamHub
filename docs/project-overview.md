@@ -350,6 +350,7 @@ public function users(): BelongsToMany
 -   ✅ Read receipts (messages + replies, excludes self)
 -   ✅ Message search (channel-scoped, replies included)
 -   ✅ Notifications (email replies/@mentions with opt-in, browser toasts for mentions)
+-   ✅ Channel archive filtering (hidden by default, toggle to show, read-only banner, send blocked)
 -   ✅ Emoji reactions (👍 ❤️ 😂 😮 😢 🎉)
 
 ### Planned Features
@@ -541,6 +542,7 @@ teamhub/
 -   [x] Read receipts
 -   [x] Message search
 -   [x] Notifications
+-   [x] Channel archive filtering
 
 ### Phase 4: Production Ready
 
