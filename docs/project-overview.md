@@ -307,6 +307,30 @@ public function users(): BelongsToMany
 7. Auto-hide after 2 seconds of no activity
 ```
 
+### Online Presence Flow
+
+```
+1. User opens channel page
+           │
+           ▼
+2. Echo.join() subscribes to presence-channel.{id}
+           │
+           ▼
+3. .here(users) callback receives current viewers
+           │
+           ▼
+4. .joining(user) fires when new user joins
+           │
+           ▼
+5. .leaving(user) fires when user leaves/disconnects
+           │
+           ▼
+6. Alpine updates onlineUsers array reactively
+           │
+           ▼
+7. UI shows avatars + "X online" indicator
+```
+
 ### Implemented Features
 
 -   ✅ Real-time message delivery
@@ -316,10 +340,10 @@ public function users(): BelongsToMany
 -   ✅ Typing indicators with whispers
 -   ✅ Auto-scroll to new messages
 -   ✅ Input clearing after send
+-   ✅ Online presence (who's viewing the channel)
 
 ### Planned Features
 
--   ⬜ Online/offline status (who's viewing)
 -   ⬜ Message editing
 -   ⬜ Message deletion
 -   ⬜ File attachments
@@ -495,10 +519,10 @@ teamhub/
 -   [x] Role-based permissions
 -   [x] Real-time messaging
 
-### Phase 2: Enhanced Messaging
+### Phase 2: Enhanced Messaging 🔄
 
--   [ ] Typing indicators
--   [ ] Online presence
+-   [x] Typing indicators
+-   [x] Online presence
 -   [ ] Message editing/deletion
 -   [ ] File attachments (MinIO)
 -   [ ] Image previews

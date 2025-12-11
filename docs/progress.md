@@ -17,7 +17,7 @@
 | Phase                           | Status         | Description                              |
 | ------------------------------- | -------------- | ---------------------------------------- |
 | **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging |
-| **Phase 2: Enhanced Messaging** | 🔄 In Progress | Typing ✅, Presence, Edits, Files        |
+| **Phase 2: Enhanced Messaging** | 🔄 In Progress | Typing ✅, Presence ✅, Edits, Files     |
 | **Phase 3: Advanced Features**  | ⏳ Planned     | Threads, Reactions, Search               |
 | **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy              |
 
@@ -128,7 +128,7 @@ Issues encountered and resolved during development:
 | Feature           | Priority | Status      |
 | ----------------- | -------- | ----------- |
 | Typing indicators | High     | ✅ Complete |
-| Online presence   | High     | ⏳ Planned  |
+| Online presence   | High     | ✅ Complete |
 | Message editing   | Medium   | ⏳ Planned  |
 | Message deletion  | Medium   | ⏳ Planned  |
 | File attachments  | Medium   | ⏳ Planned  |
@@ -141,6 +141,14 @@ Issues encountered and resolved during development:
 - **Animated UI** with bouncing dots indicator
 - **Auto-hide** after 2 seconds of no typing
 - **Debounced** input (300ms) to prevent event spam
+
+### ✅ Online Presence Implementation
+
+- **Presence channel events**: `.here()`, `.joining()`, `.leaving()`
+- **Real-time user tracking**: Shows who's viewing the channel
+- **Avatar display**: User initials in colored circles (up to 5)
+- **Online count**: "X online" indicator with pulsing green dot
+- **Overflow handling**: "+N more" for channels with many viewers
 
 ---
 

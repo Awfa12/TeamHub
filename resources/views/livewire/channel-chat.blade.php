@@ -1,6 +1,7 @@
 <div
     x-data="{
         typingUsers: {},
+        onlineUsers: [],
         channel: null,
         currentUserId: {{ auth()->id() }},
         currentUserName: '{{ auth()->user()->name }}',
@@ -13,8 +14,20 @@
         
         setupEcho() {
             const component = this;
-            // Join presence channel (allows whispers for typing indicators)
+            // Join presence channel (allows whispers for typing indicators + online presence)
             this.channel = Echo.join('channel.' + this.channelId)
+                .here((users) => {
+                    // Called when first joining - get all current users
+                    component.onlineUsers = users;
+                })
+                .joining((user) => {
+                    // Called when a new user joins
+                    component.onlineUsers.push(user);
+                })
+                .leaving((user) => {
+                    // Called when a user leaves
+                    component.onlineUsers = component.onlineUsers.filter(u => u.id !== user.id);
+                })
                 .listen('.message.sent', (e) => {
                     // Dispatch event to trigger Livewire update
                     window.dispatchEvent(new CustomEvent('echo-message-received', { detail: e }));
@@ -39,6 +52,14 @@
         
         get isAnyoneTyping() {
             return Object.keys(this.typingUsers).length > 0;
+        },
+        
+        get onlineCount() {
+            return this.onlineUsers.length;
+        },
+        
+        get otherOnlineUsers() {
+            return this.onlineUsers.filter(u => u.id !== this.currentUserId);
         },
         
         handleTyping() {
@@ -70,6 +91,30 @@
     x-on:message-received.window="scrollToBottom()"
     x-on:echo-message-received.window="$wire.messageReceived($event.detail)"
 >
+
+    {{-- Online users indicator --}}
+    <div class="flex items-center justify-between mb-4 p-3 bg-white rounded shadow-sm">
+        <div class="flex items-center gap-2">
+            <span class="flex items-center gap-1">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span class="text-sm text-gray-600" x-text="onlineCount + ' online'"></span>
+            </span>
+        </div>
+        <div class="flex items-center gap-2" x-show="otherOnlineUsers.length > 0">
+            <template x-for="user in otherOnlineUsers.slice(0, 5)" :key="user.id">
+                <div 
+                    class="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                    :title="user.name"
+                    x-text="user.name.charAt(0).toUpperCase()"
+                ></div>
+            </template>
+            <span 
+                x-show="otherOnlineUsers.length > 5" 
+                class="text-sm text-gray-500"
+                x-text="'+' + (otherOnlineUsers.length - 5) + ' more'"
+            ></span>
+        </div>
+    </div>
 
     <div 
         x-ref="messagesContainer"
