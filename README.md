@@ -10,6 +10,7 @@
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![CI](https://img.shields.io/github/actions/workflow/status/<REPO_OWNER>/<REPO_NAME>/ci.yml?style=for-the-badge&label=Tests)
 
 **Slack-inspired, multi-tenant team chat with real-time messaging, presence, typing indicators, threads, reactions, read receipts, search, notifications, and secure file sharing.**
 
