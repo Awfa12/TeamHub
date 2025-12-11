@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Message extends Model
 {
     /** @use HasFactory<\Database\Factories\MessageFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'uuid',
@@ -35,5 +37,63 @@ class Message extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the file URL for downloading/viewing
+     */
+    public function getFileUrlAttribute(): ?string
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        return route('files.show', $this);
+    }
+
+    /**
+     * Get the download URL
+     */
+    public function getDownloadUrlAttribute(): ?string
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        return route('files.download', $this);
+    }
+
+    /**
+     * Check if the file is an image
+     */
+    public function getIsImageAttribute(): bool
+    {
+        if (!$this->file_name) {
+            return false;
+        }
+
+        $extension = strtolower(pathinfo($this->file_name, PATHINFO_EXTENSION));
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+    }
+
+    /**
+     * Format file size for display
+     */
+    public function getFormattedFileSizeAttribute(): string
+    {
+        if (!$this->file_size) {
+            return '';
+        }
+
+        $bytes = $this->file_size;
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $index = 0;
+
+        while ($bytes >= 1024 && $index < count($units) - 1) {
+            $bytes /= 1024;
+            $index++;
+        }
+
+        return round($bytes, 1) . ' ' . $units[$index];
     }
 }

@@ -343,10 +343,10 @@ public function users(): BelongsToMany
 -   ✅ Online presence (who's viewing the channel)
 -   ✅ Message editing with "(edited)" indicator
 -   ✅ Message deletion with custom modal
+-   ✅ File attachments with MinIO storage
+-   ✅ Image previews with download links
 
 ### Planned Features
-
--   ⬜ File attachments
 -   ⬜ Read receipts
 -   ⬜ Emoji reactions
 -   ⬜ Thread replies
@@ -519,14 +519,14 @@ teamhub/
 -   [x] Role-based permissions
 -   [x] Real-time messaging
 
-### Phase 2: Enhanced Messaging 🔄
+### Phase 2: Enhanced Messaging ✅
 
 -   [x] Typing indicators
 -   [x] Online presence
 -   [x] Message editing
 -   [x] Message deletion
--   [ ] File attachments (MinIO)
--   [ ] Image previews
+-   [x] File attachments (MinIO)
+-   [x] Image previews
 
 ### Phase 3: Advanced Features
 

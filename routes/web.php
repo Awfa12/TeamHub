@@ -6,6 +6,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ChannelController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\FileController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -46,6 +47,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/channel/{channel}/messages', [MessageController::class, 'store'])->name('channels.messages.store');
             });
         });
+
+    // File routes
+    Route::get('/files/{message}', [FileController::class, 'show'])->name('files.show');
+    Route::get('/files/{message}/download', [FileController::class, 'download'])->name('files.download');
 });
 
 require __DIR__.'/auth.php';

@@ -6,15 +6,17 @@ use App\Models\Team;
 use App\Models\Channel;
 use App\Models\Message;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use App\Events\MessageSent;
 use App\Events\MessageUpdated;
 use App\Events\MessageDeleted;
 
 class ChannelChat extends Component
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, WithFileUploads;
 
     public Team $team; 
     public Channel $channel; 
@@ -22,6 +24,7 @@ class ChannelChat extends Component
     public int $channelId;
     public $body = ''; 
     public $chatMessages;
+    public $file;
     
     // Edit mode properties
     public ?int $editingMessageId = null;
@@ -47,29 +50,47 @@ class ChannelChat extends Component
         $this->authorize('view', $team);
         $this->authorize('view', $channel);
 
-        // Validate body
-        $validated = $this->validate([
-            'body' => 'required|string|max:500',
+        // Validate - require body OR file
+        $this->validate([
+            'body' => 'nullable|string|max:500',
+            'file' => 'nullable|file|max:10240', // 10MB max
         ]);
+
+        // Must have body or file
+        if (empty($this->body) && !$this->file) {
+            $this->addError('body', 'Please enter a message or attach a file.');
+            return;
+        }
 
         $userId = auth()->id();
         if (! $userId) {
             abort(401);
         }
 
-        $message = Message::create([
+        // Handle file upload
+        $fileData = [];
+        if ($this->file) {
+            $path = $this->file->store('messages/' . $channel->id, 'minio');
+            $fileData = [
+                'file_name' => $this->file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_size' => $this->file->getSize(),
+            ];
+        }
+
+        $message = Message::create(array_merge([
             'uuid' => (string) Str::uuid(),
             'user_id' => $userId,
             'channel_id' => $channel->id,
-            'body' => $validated['body'],
-        ]);
+            'body' => $this->body ?: null,
+        ], $fileData));
 
         MessageSent::dispatch($message);
 
         $this->chatMessages->push($message->load('user'));
 
         // Clear the input and scroll to bottom
-        $this->reset('body');
+        $this->reset(['body', 'file']);
         $this->dispatch('message-sent');
     }
 

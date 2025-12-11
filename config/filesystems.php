@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        'minio' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID', 'minioadmin'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY', 'minioadmin'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'bucket' => env('AWS_BUCKET', 'teamhub'),
+            'url' => env('AWS_URL', 'http://localhost:9000'),
+            'endpoint' => env('AWS_ENDPOINT', 'http://minio:9000'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

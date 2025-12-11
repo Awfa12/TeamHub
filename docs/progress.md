@@ -17,7 +17,7 @@
 | Phase                           | Status         | Description                              |
 | ------------------------------- | -------------- | ---------------------------------------- |
 | **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging |
-| **Phase 2: Enhanced Messaging** | 🔄 In Progress | Typing ✅, Presence ✅, Edits ✅, Delete ✅ |
+| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files   |
 | **Phase 3: Advanced Features**  | ⏳ Planned     | Threads, Reactions, Search               |
 | **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy              |
 
@@ -131,8 +131,8 @@ Issues encountered and resolved during development:
 | Online presence   | High     | ✅ Complete |
 | Message editing   | Medium   | ✅ Complete |
 | Message deletion  | Medium   | ✅ Complete |
-| File attachments  | Medium   | ⏳ Planned  |
-| Image previews    | Low      | ⏳ Planned  |
+| File attachments  | Medium   | ✅ Complete |
+| Image previews    | Low      | ✅ Complete |
 
 ### ✅ Typing Indicators Implementation
 
@@ -166,6 +166,16 @@ Issues encountered and resolved during development:
 - **"This message was deleted" placeholder**: Gray italic text with icon
 - **MessageDeleted event**: Broadcasts deletion to all viewers
 - **Real-time sync**: Deletion appears instantly across all browsers
+
+### ✅ File Attachments Implementation
+
+- **MinIO storage**: S3-compatible object storage via Docker
+- **Livewire file uploads**: Temporary local storage, then moved to MinIO
+- **Image previews**: Inline image display with click to view full
+- **File downloads**: Secure download through Laravel routes
+- **File info display**: Name, size, download button
+- **10MB max size**: Configurable in Livewire config
+- **Multiple file types**: Images, PDFs, docs, spreadsheets, text, zip
 
 ---
 

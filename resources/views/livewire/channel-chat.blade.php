@@ -226,7 +226,51 @@
                         </form>
                     @else
                         {{-- Display mode --}}
-                        <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
+                        @if($message->body)
+                            <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
+                        @endif
+                        
+                        {{-- File attachment --}}
+                        @if($message->file_path)
+                            <div class="mt-2">
+                                @if($message->is_image)
+                                    {{-- Image preview --}}
+                                    <a href="{{ $message->file_url }}" target="_blank" class="block">
+                                        <img 
+                                            src="{{ $message->file_url }}" 
+                                            alt="{{ $message->file_name }}"
+                                            class="max-w-xs max-h-64 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer"
+                                        >
+                                    </a>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <p class="text-xs text-gray-400">{{ $message->file_name }} ({{ $message->formatted_file_size }})</p>
+                                        <a 
+                                            href="{{ $message->download_url }}" 
+                                            class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            Download
+                                        </a>
+                                    </div>
+                                @else
+                                    {{-- File download link --}}
+                                    <a 
+                                        href="{{ $message->download_url }}" 
+                                        class="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">{{ $message->file_name }}</p>
+                                            <p class="text-xs text-gray-400">{{ $message->formatted_file_size }} • Click to download</p>
+                                        </div>
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
                     @endif
                 @endif
             </div>
@@ -252,7 +296,7 @@
         <span x-text="typingNames + ' is typing...'"></span>
     </div>
 
-    <form wire:submit="sendMessage" class="bg-white p-4 rounded shadow-sm">
+    <form wire:submit="sendMessage" class="bg-white p-4 rounded shadow-sm" x-data="{ fileName: null }">
         <div>
             <textarea 
                 wire:model="body"
@@ -265,13 +309,69 @@
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
             @enderror
         </div>
-        <div class="mt-2 flex justify-end">
+        
+        {{-- File upload section --}}
+        <div class="mt-3">
+            {{-- File preview --}}
+            @if($file)
+                <div class="flex items-center gap-2 p-2 bg-indigo-50 rounded-lg mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                    <span class="text-sm text-indigo-700 flex-1 truncate">{{ $file->getClientOriginalName() }}</span>
+                    <button 
+                        type="button" 
+                        wire:click="$set('file', null)"
+                        class="text-indigo-400 hover:text-red-500 transition"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            @endif
+            
+            @error('file')
+                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+        
+        <div class="mt-2 flex justify-between items-center">
+            {{-- File upload button --}}
+            <label class="cursor-pointer inline-flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <span class="text-sm">Attach file</span>
+                <input 
+                    type="file" 
+                    wire:model="file"
+                    class="hidden"
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+                >
+            </label>
+            
+            {{-- Send button --}}
             <button 
                 type="submit"
+                wire:loading.attr="disabled"
+                wire:loading.class="opacity-50 cursor-not-allowed"
                 class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
             >
-                Send
+                <span wire:loading.remove wire:target="sendMessage">Send</span>
+                <span wire:loading wire:target="sendMessage">Sending...</span>
             </button>
+        </div>
+        
+        {{-- Upload progress --}}
+        <div wire:loading wire:target="file" class="mt-2">
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading file...
+            </div>
         </div>
     </form>
 
