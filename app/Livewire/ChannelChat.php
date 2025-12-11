@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Str;
 use App\Events\MessageSent;
 use App\Events\MessageUpdated;
+use App\Events\MessageDeleted;
 
 class ChannelChat extends Component
 {
@@ -149,6 +150,41 @@ class ChannelChat extends Component
             if ($msg->id === $payload['id']) {
                 // Fetch fresh message from DB
                 return Message::with('user')->find($payload['id']) ?? $msg;
+            }
+            return $msg;
+        });
+    }
+
+    public function deleteMessage(int $messageId): void
+    {
+        $message = Message::find($messageId);
+        
+        if (!$message || $message->user_id !== auth()->id()) {
+            return;
+        }
+
+        $channelId = $message->channel_id;
+        
+        // Soft delete the message
+        $message->delete();
+
+        // Dispatch broadcast event
+        MessageDeleted::dispatch($messageId, $channelId);
+
+        // Mark as deleted in local collection (keep for UI placeholder)
+        $this->chatMessages = $this->chatMessages->map(function ($msg) use ($messageId) {
+            if ($msg->id === $messageId) {
+                $msg->deleted_at = now();
+            }
+            return $msg;
+        });
+    }
+
+    public function messageDeletedReceived(array $payload): void
+    {
+        $this->chatMessages = $this->chatMessages->map(function ($msg) use ($payload) {
+            if ($msg->id === $payload['id']) {
+                $msg->deleted_at = now();
             }
             return $msg;
         });

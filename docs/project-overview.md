@@ -342,10 +342,10 @@ public function users(): BelongsToMany
 -   ✅ Input clearing after send
 -   ✅ Online presence (who's viewing the channel)
 -   ✅ Message editing with "(edited)" indicator
+-   ✅ Message deletion with custom modal
 
 ### Planned Features
 
--   ⬜ Message deletion
 -   ⬜ File attachments
 -   ⬜ Read receipts
 -   ⬜ Emoji reactions
@@ -524,7 +524,7 @@ teamhub/
 -   [x] Typing indicators
 -   [x] Online presence
 -   [x] Message editing
--   [ ] Message deletion
+-   [x] Message deletion
 -   [ ] File attachments (MinIO)
 -   [ ] Image previews
 

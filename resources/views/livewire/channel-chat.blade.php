@@ -7,6 +7,10 @@
         currentUserName: '{{ auth()->user()->name }}',
         channelId: {{ $channelId }},
         
+        // Delete confirmation modal
+        showDeleteModal: false,
+        deleteMessageId: null,
+        
         init() {
             this.scrollToBottom();
             this.setupEcho();
@@ -35,6 +39,10 @@
                 .listen('.message.updated', (e) => {
                     // Dispatch event for message update
                     window.dispatchEvent(new CustomEvent('echo-message-updated', { detail: e }));
+                })
+                .listen('.message.deleted', (e) => {
+                    // Dispatch event for message deletion
+                    window.dispatchEvent(new CustomEvent('echo-message-deleted', { detail: e }));
                 })
                 .listenForWhisper('typing', (e) => {
                     component.userStartedTyping(e.userId, e.name);
@@ -89,12 +97,30 @@
                     delete this.typingUsers[userId];
                 }, 2000);
             }
+        },
+        
+        confirmDelete(messageId) {
+            this.deleteMessageId = messageId;
+            this.showDeleteModal = true;
+        },
+        
+        cancelDelete() {
+            this.showDeleteModal = false;
+            this.deleteMessageId = null;
+        },
+        
+        executeDelete() {
+            if (this.deleteMessageId) {
+                $wire.deleteMessage(this.deleteMessageId);
+            }
+            this.cancelDelete();
         }
     }"
     x-on:message-sent.window="scrollToBottom(); typingUsers = {}"
     x-on:message-received.window="scrollToBottom()"
     x-on:echo-message-received.window="$wire.messageReceived($event.detail)"
     x-on:echo-message-updated.window="$wire.messageUpdatedReceived($event.detail)"
+    x-on:echo-message-deleted.window="$wire.messageDeletedReceived($event.detail)"
 >
 
     {{-- Online users indicator --}}
@@ -126,58 +152,82 @@
         class="space-y-4 mb-6 max-h-[60vh] overflow-y-auto scroll-smooth"
     >
         @foreach($chatMessages as $message)
-            <div class="p-3 bg-white rounded shadow-sm group" wire:key="message-{{ $message->id }}">
-                <div class="flex items-center justify-between mb-1">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-semibold text-gray-900">{{ $message->user->name ?? 'Unknown' }}</span>
-                        <span class="text-xs text-gray-400">{{ $message->created_at?->diffForHumans() }}</span>
-                        @if($message->edited_at)
-                            <span class="text-xs text-gray-400 italic">(edited)</span>
+            <div class="p-3 {{ $message->deleted_at ? 'bg-gray-100' : 'bg-white' }} rounded shadow-sm group" wire:key="message-{{ $message->id }}">
+                @if($message->deleted_at)
+                    {{-- Deleted message placeholder --}}
+                    <div class="text-gray-400 italic text-sm flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                        This message was deleted
+                    </div>
+                @else
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-semibold text-gray-900">{{ $message->user->name ?? 'Unknown' }}</span>
+                            <span class="text-xs text-gray-400">{{ $message->created_at?->diffForHumans() }}</span>
+                            @if($message->edited_at)
+                                <span class="text-xs text-gray-400 italic">(edited)</span>
+                            @endif
+                        </div>
+                        @if($message->user_id === auth()->id() && $editingMessageId !== $message->id)
+                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {{-- Edit button --}}
+                                <button 
+                                    wire:click="startEditing({{ $message->id }})"
+                                    class="text-gray-400 hover:text-indigo-600 p-1"
+                                    title="Edit"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                                {{-- Delete button --}}
+                                <button 
+                                    @click="confirmDelete({{ $message->id }})"
+                                    class="text-gray-400 hover:text-red-600 p-1"
+                                    title="Delete"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
                         @endif
                     </div>
-                    @if($message->user_id === auth()->id() && $editingMessageId !== $message->id)
-                        <button 
-                            wire:click="startEditing({{ $message->id }})"
-                            class="text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity text-sm"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
+                    
+                    @if($editingMessageId === $message->id)
+                        {{-- Edit mode --}}
+                        <form wire:submit="updateMessage" class="mt-2">
+                            <textarea 
+                                wire:model="editBody"
+                                class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-indigo-200 text-sm resize-y"
+                                rows="2"
+                                autofocus
+                            ></textarea>
+                            @error('editBody')
+                                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                            <div class="flex gap-2 mt-2">
+                                <button 
+                                    type="submit"
+                                    class="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition"
+                                >
+                                    Save
+                                </button>
+                                <button 
+                                    type="button"
+                                    wire:click="cancelEditing"
+                                    class="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    @else
+                        {{-- Display mode --}}
+                        <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
                     @endif
-                </div>
-                
-                @if($editingMessageId === $message->id)
-                    {{-- Edit mode --}}
-                    <form wire:submit="updateMessage" class="mt-2">
-                        <textarea 
-                            wire:model="editBody"
-                            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-indigo-200 text-sm resize-y"
-                            rows="2"
-                            autofocus
-                        ></textarea>
-                        @error('editBody')
-                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                        <div class="flex gap-2 mt-2">
-                            <button 
-                                type="submit"
-                                class="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition"
-                            >
-                                Save
-                            </button>
-                            <button 
-                                type="button"
-                                wire:click="cancelEditing"
-                                class="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                @else
-                    {{-- Display mode --}}
-                    <div class="text-gray-800 whitespace-pre-line">{{ $message->body }}</div>
                 @endif
             </div>
         @endforeach
@@ -224,5 +274,69 @@
             </button>
         </div>
     </form>
+
+    {{-- Delete Confirmation Modal --}}
+    <div 
+        x-show="showDeleteModal"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 flex items-center justify-center"
+        style="display: none;"
+    >
+        {{-- Backdrop --}}
+        <div 
+            class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            @click="cancelDelete()"
+        ></div>
+        
+        {{-- Modal --}}
+        <div 
+            x-show="showDeleteModal"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4"
+        >
+            {{-- Icon --}}
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-red-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            
+            {{-- Title --}}
+            <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">
+                Delete Message
+            </h3>
+            
+            {{-- Description --}}
+            <p class="text-gray-500 text-center text-sm mb-6">
+                Are you sure you want to delete this message? This action cannot be undone.
+            </p>
+            
+            {{-- Buttons --}}
+            <div class="flex gap-3">
+                <button 
+                    @click="cancelDelete()"
+                    class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition"
+                >
+                    Cancel
+                </button>
+                <button 
+                    @click="executeDelete()"
+                    class="flex-1 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition"
+                >
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
 
 </div>
