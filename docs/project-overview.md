@@ -560,7 +560,8 @@ teamhub/
 -   [x] Unit & feature tests
 -   [x] API/documentation (internal)
 -   [x] Performance optimization (indexes, gzip/static caching)
--   [ ] Production deployment guide
+-   [x] Production deployment guide
+-   [x] CI (tests) via GitHub Actions
 
 ---
 

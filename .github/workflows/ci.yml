@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      db:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: teamhub
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, pcntl, bcmath, gd, pdo_mysql, redis
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --no-suggest
+
+      - name: Copy env
+        run: cp .env.example .env
+
+      - name: Generate key
+        run: php artisan key:generate
+
+      - name: Configure test env
+        run: |
+          php -r '$env=file_get_contents(".env"); $env=str_replace("DB_HOST=db","DB_HOST=127.0.0.1",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=str_replace("REDIS_HOST=redis","REDIS_HOST=127.0.0.1",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=str_replace("QUEUE_CONNECTION=redis","QUEUE_CONNECTION=redis",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=str_replace("BROADCAST_CONNECTION=reverb","BROADCAST_CONNECTION=log",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=str_replace("CACHE_STORE=redis","CACHE_STORE=redis",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=str_replace("SESSION_DRIVER=redis","SESSION_DRIVER=redis",$env); file_put_contents(".env",$env);'
+
+      - name: Migrate & seed
+        run: php artisan migrate --seed
+
+      - name: Run tests
+        run: php artisan test
