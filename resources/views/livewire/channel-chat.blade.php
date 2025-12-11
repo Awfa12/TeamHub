@@ -48,6 +48,10 @@
                     // Dispatch event for reaction toggle
                     window.dispatchEvent(new CustomEvent('echo-reaction-toggled', { detail: e }));
                 })
+                .listen('.read.receipt', (e) => {
+                    // Dispatch event for read receipts
+                    window.dispatchEvent(new CustomEvent('echo-read-receipt', { detail: e }));
+                })
                 .listenForWhisper('typing', (e) => {
                     component.userStartedTyping(e.userId, e.name);
                 });
@@ -126,6 +130,7 @@
     x-on:echo-message-updated.window="$wire.messageUpdatedReceived($event.detail)"
     x-on:echo-message-deleted.window="$wire.messageDeletedReceived($event.detail)"
     x-on:echo-reaction-toggled.window="$wire.reactionToggledReceived($event.detail)"
+    x-on:echo-read-receipt.window="$wire.readReceiptReceived($event.detail)"
 >
 
     {{-- Online users indicator --}}
@@ -296,6 +301,18 @@
                             </div>
                         @endif
 
+                        {{-- Read receipts --}}
+                        @if($message->read_count_excluding_me > 0)
+                            <div class="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m5 2a9 9 0 11-18 0a9 9 0 0118 0z" />
+                                </svg>
+                                <span title="{{ implode(', ', $message->read_users_excluding_me->toArray()) }}">
+                                    Seen by {{ $message->read_count_excluding_me }} {{ Str::plural('person', $message->read_count_excluding_me) }}
+                                </span>
+                            </div>
+                        @endif
+
                         {{-- Reply button, reactions, and thread info --}}
                         <div class="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100">
                             {{-- Emoji picker --}}
@@ -405,6 +422,18 @@
                                                             </span>
                                                         </button>
                                                     @endforeach
+                                                </div>
+                                            @endif
+
+                                            {{-- Read receipts for reply --}}
+                                            @if($reply->read_count_excluding_me > 0)
+                                                <div class="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m5 2a9 9 0 11-18 0a9 9 0 0118 0z" />
+                                                    </svg>
+                                                    <span title="{{ implode(', ', $reply->read_users_excluding_me->toArray()) }}">
+                                                        Seen by {{ $reply->read_count_excluding_me }} {{ Str::plural('person', $reply->read_count_excluding_me) }}
+                                                    </span>
                                                 </div>
                                             @endif
 

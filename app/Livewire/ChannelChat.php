@@ -15,6 +15,8 @@ use App\Events\MessageUpdated;
 use App\Events\MessageDeleted;
 use App\Events\ReactionToggled;
 use App\Models\Reaction;
+use App\Events\ReadReceiptUpdated;
+use App\Models\MessageRead;
 
 class ChannelChat extends Component
 {
@@ -37,6 +39,7 @@ class ChannelChat extends Component
     
     // Track which threads are expanded (using string keys for better Livewire serialization)
     public array $expandedThreads = [];
+    public ?int $lastReadMessageId = null;
 
     public function mount(Team $team, Channel $channel)
     {
@@ -45,11 +48,13 @@ class ChannelChat extends Component
         $this->teamId = $team->id;
         $this->channelId = $channel->id;
         // Only load parent messages (not replies) - lazy load replies when expanded
-        $this->chatMessages = Message::with(['user', 'reactions.user'])
+        $this->chatMessages = Message::with(['user', 'reactions.user', 'reads.user'])
                         ->withCount('replies')
                         ->where('channel_id', $channel->id)
                         ->whereNull('parent_id')
                         ->latest()->take(30)->get()->reverse()->values();
+
+        $this->markLatestRead();
     }
 
     public function sendMessage()
@@ -119,6 +124,8 @@ class ChannelChat extends Component
         // Clear the input and scroll to bottom
         $this->reset(['body', 'file', 'replyingToMessageId']);
         $this->dispatch('message-sent');
+        // Mark as read for sender
+        $this->markLatestRead();
     }
 
     public function messageReceived(array $payload): void
@@ -154,6 +161,9 @@ class ChannelChat extends Component
         
         // Notify frontend to scroll to bottom
         $this->dispatch('message-received');
+
+        // Mark latest as read
+        $this->markLatestRead();
     }
 
     public function startEditing(int $messageId): void
@@ -292,11 +302,52 @@ class ChannelChat extends Component
             // Always load replies when expanding (ensures fresh data)
             $this->chatMessages = $this->chatMessages->map(function ($msg) use ($messageId) {
                 if ($msg->id === $messageId) {
-                    $msg->load(['replies.user', 'replies.reactions.user']);
+                    $msg->load(['replies.user', 'replies.reactions.user', 'replies.reads.user']);
                 }
                 return $msg;
             });
         }
+    }
+
+    private function markLatestRead(): void
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return;
+        }
+
+        $latest = Message::where('channel_id', $this->channelId)
+            ->latest('id')
+            ->first();
+
+        if (!$latest || $this->lastReadMessageId === $latest->id) {
+            return;
+        }
+
+        MessageRead::updateOrCreate(
+            [
+                'message_id' => $latest->id,
+                'user_id' => $userId,
+            ],
+            ['read_at' => now()]
+        );
+
+        $this->lastReadMessageId = $latest->id;
+
+        ReadReceiptUpdated::dispatch(
+            $latest->id,
+            $this->channelId,
+            $userId,
+            auth()->user()->name
+        );
+
+        // Update local collection for latest message
+        $this->chatMessages = $this->chatMessages->map(function ($msg) use ($latest) {
+            if ($msg->id === $latest->id) {
+                $msg->load('reads.user');
+            }
+            return $msg;
+        });
     }
 
     // Common emojis for quick reactions
@@ -357,6 +408,16 @@ class ChannelChat extends Component
         $this->refreshMessageReactions($payload['message_id']);
     }
 
+    public function readReceiptReceived(array $payload): void
+    {
+        // Skip if it's our own read (already updated locally)
+        if ($payload['user_id'] === auth()->id()) {
+            return;
+        }
+
+        $this->refreshMessageReads($payload['message_id']);
+    }
+
     private function refreshMessageReactions(int $messageId): void
     {
         $message = Message::with('reactions.user')->find($messageId);
@@ -383,6 +444,37 @@ class ChannelChat extends Component
             $this->chatMessages = $this->chatMessages->map(function ($msg) use ($message, $messageId) {
                 if ($msg->id === $messageId) {
                     $msg->setRelation('reactions', $message->reactions);
+                }
+                return $msg;
+            });
+        }
+    }
+
+    private function refreshMessageReads(int $messageId): void
+    {
+        $message = Message::with('reads.user')->find($messageId);
+        if (!$message) {
+            return;
+        }
+
+        // If it's a reply, refresh parent's replies
+        if ($message->parent_id) {
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($message) {
+                if ($msg->id === $message->parent_id && $msg->relationLoaded('replies')) {
+                    $msg->replies = $msg->replies->map(function ($reply) use ($message) {
+                        if ($reply->id === $message->id) {
+                            $reply->setRelation('reads', $message->reads);
+                        }
+                        return $reply;
+                    });
+                }
+                return $msg;
+            });
+        } else {
+            // Direct message
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($messageId, $message) {
+                if ($msg->id === $messageId) {
+                    $msg->setRelation('reads', $message->reads);
                 }
                 return $msg;
             });

@@ -14,13 +14,12 @@
 
 ## 📊 Progress Overview
 
-| Phase                           | Status         | Description                              |
-| ------------------------------- | -------------- | ---------------------------------------- |
-| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging |
-| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files   |
-| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Search          |
-| **Phase 3: Advanced Features**  | ⏳ Planned     | Threads, Reactions, Search               |
-| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy              |
+| Phase                           | Status         | Description                               |
+| ------------------------------- | -------------- | ----------------------------------------- |
+| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging  |
+| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files    |
+| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search |
+| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy               |
 
 ---
 
@@ -107,18 +106,18 @@
 
 Issues encountered and resolved during development:
 
-| #   | Issue                               | Solution                                                       |
-| --- | ----------------------------------- | -------------------------------------------------------------- |
-| 1   | Vite env vars not interpolating     | Use literal values for `VITE_*` (not `${VAR}`)                 |
-| 2   | Livewire 3 Echo listener not firing | Use `@script` directive instead of `getListeners()`            |
-| 3   | Event not received by client        | Add `.` prefix to event name: `.listen('.message.sent')`       |
-| 4   | Livewire 2 syntax errors            | Update to Livewire 3: `wire:submit` and `wire:model`           |
-| 5   | Collection serialization error      | Fetch actual Message model, not stdClass                       |
-| 6   | Broadcasting going to log           | Use `BROADCAST_CONNECTION` not `BROADCAST_DRIVER` (Laravel 12) |
-| 7   | Livewire.js 404                     | Add Nginx location block for `/livewire/*`                     |
-| 8   | diffForHumans() on string           | Fetch Message model to get Carbon instances                    |
-| 9   | Multiple Alpine instances error     | Remove Alpine import from `app.js` - Livewire 3 bundles it     |
-| 10  | Presence vs Private channel mismatch | Use `PresenceChannel` in event when using `Echo.join()`       |
+| #   | Issue                                | Solution                                                       |
+| --- | ------------------------------------ | -------------------------------------------------------------- |
+| 1   | Vite env vars not interpolating      | Use literal values for `VITE_*` (not `${VAR}`)                 |
+| 2   | Livewire 3 Echo listener not firing  | Use `@script` directive instead of `getListeners()`            |
+| 3   | Event not received by client         | Add `.` prefix to event name: `.listen('.message.sent')`       |
+| 4   | Livewire 2 syntax errors             | Update to Livewire 3: `wire:submit` and `wire:model`           |
+| 5   | Collection serialization error       | Fetch actual Message model, not stdClass                       |
+| 6   | Broadcasting going to log            | Use `BROADCAST_CONNECTION` not `BROADCAST_DRIVER` (Laravel 12) |
+| 7   | Livewire.js 404                      | Add Nginx location block for `/livewire/*`                     |
+| 8   | diffForHumans() on string            | Fetch Message model to get Carbon instances                    |
+| 9   | Multiple Alpine instances error      | Remove Alpine import from `app.js` - Livewire 3 bundles it     |
+| 10  | Presence vs Private channel mismatch | Use `PresenceChannel` in event when using `Echo.join()`        |
 
 > 📚 See [`real-time-messaging.md`](real-time-messaging.md) for detailed implementation guide.
 
@@ -137,46 +136,46 @@ Issues encountered and resolved during development:
 
 ### ✅ Typing Indicators Implementation
 
-- **Presence channels** for real-time user tracking
-- **Whisper events** for typing (client-to-client, no server round-trip)
-- **Animated UI** with bouncing dots indicator
-- **Auto-hide** after 2 seconds of no typing
-- **Debounced** input (300ms) to prevent event spam
+-   **Presence channels** for real-time user tracking
+-   **Whisper events** for typing (client-to-client, no server round-trip)
+-   **Animated UI** with bouncing dots indicator
+-   **Auto-hide** after 2 seconds of no typing
+-   **Debounced** input (300ms) to prevent event spam
 
 ### ✅ Online Presence Implementation
 
-- **Presence channel events**: `.here()`, `.joining()`, `.leaving()`
-- **Real-time user tracking**: Shows who's viewing the channel
-- **Avatar display**: User initials in colored circles (up to 5)
-- **Online count**: "X online" indicator with pulsing green dot
-- **Overflow handling**: "+N more" for channels with many viewers
+-   **Presence channel events**: `.here()`, `.joining()`, `.leaving()`
+-   **Real-time user tracking**: Shows who's viewing the channel
+-   **Avatar display**: User initials in colored circles (up to 5)
+-   **Online count**: "X online" indicator with pulsing green dot
+-   **Overflow handling**: "+N more" for channels with many viewers
 
 ### ✅ Message Editing Implementation
 
-- **Owner-only editing**: Edit button only appears for your own messages
-- **Inline edit mode**: Textarea replaces message body with Save/Cancel
-- **MessageUpdated event**: Broadcasts edits to all channel viewers
-- **"(edited)" indicator**: Shows when message was modified
-- **Real-time sync**: Edits appear instantly across all browsers
+-   **Owner-only editing**: Edit button only appears for your own messages
+-   **Inline edit mode**: Textarea replaces message body with Save/Cancel
+-   **MessageUpdated event**: Broadcasts edits to all channel viewers
+-   **"(edited)" indicator**: Shows when message was modified
+-   **Real-time sync**: Edits appear instantly across all browsers
 
 ### ✅ Message Deletion Implementation
 
-- **Owner-only deletion**: Delete button only appears for your own messages
-- **Custom confirmation modal**: Beautiful Alpine.js modal with backdrop blur
-- **Soft delete**: Messages kept in DB but marked as deleted
-- **"This message was deleted" placeholder**: Gray italic text with icon
-- **MessageDeleted event**: Broadcasts deletion to all viewers
-- **Real-time sync**: Deletion appears instantly across all browsers
+-   **Owner-only deletion**: Delete button only appears for your own messages
+-   **Custom confirmation modal**: Beautiful Alpine.js modal with backdrop blur
+-   **Soft delete**: Messages kept in DB but marked as deleted
+-   **"This message was deleted" placeholder**: Gray italic text with icon
+-   **MessageDeleted event**: Broadcasts deletion to all viewers
+-   **Real-time sync**: Deletion appears instantly across all browsers
 
 ### ✅ File Attachments Implementation
 
-- **MinIO storage**: S3-compatible object storage via Docker
-- **Livewire file uploads**: Temporary local storage, then moved to MinIO
-- **Image previews**: Inline image display with click to view full
-- **File downloads**: Secure download through Laravel routes
-- **File info display**: Name, size, download button
-- **10MB max size**: Configurable in Livewire config
-- **Multiple file types**: Images, PDFs, docs, spreadsheets, text, zip
+-   **MinIO storage**: S3-compatible object storage via Docker
+-   **Livewire file uploads**: Temporary local storage, then moved to MinIO
+-   **Image previews**: Inline image display with click to view full
+-   **File downloads**: Secure download through Laravel routes
+-   **File info display**: Name, size, download button
+-   **10MB max size**: Configurable in Livewire config
+-   **Multiple file types**: Images, PDFs, docs, spreadsheets, text, zip
 
 ---
 
@@ -186,31 +185,40 @@ Issues encountered and resolved during development:
 | ------------------------- | -------- | ----------- |
 | Thread replies            | High     | ✅ Complete |
 | Emoji reactions           | Medium   | ✅ Complete |
-| Read receipts             | Medium   | ⏳ Planned  |
+| Read receipts             | Medium   | ✅ Complete |
 | Message search            | Medium   | ⏳ Planned  |
 | Notifications             | Low      | ⏳ Planned  |
 | Channel archive filtering | Low      | ⏳ Planned  |
 
 ### ✅ Thread Replies Implementation
 
-- **Slack-style flat threading**: Replies go to parent message, not nested
-- **Reply button**: On every message and reply
-- **@mention pre-fill**: When replying to a reply, @Username is added
-- **Expand/collapse**: Click reply count to show/hide thread
-- **Lazy loading**: Replies loaded only when expanded
-- **Optimized queries**: Uses `withCount()` instead of loading all replies
-- **Real-time updates**: New replies appear instantly
-- **Reply indicator**: Shows "Replying to..." with preview
+-   **Slack-style flat threading**: Replies go to parent message, not nested
+-   **Reply button**: On every message and reply
+-   **@mention pre-fill**: When replying to a reply, @Username is added
+-   **Expand/collapse**: Click reply count to show/hide thread
+-   **Lazy loading**: Replies loaded only when expanded
+-   **Optimized queries**: Uses `withCount()` instead of loading all replies
+-   **Real-time updates**: New replies appear instantly
+-   **Reply indicator**: Shows "Replying to..." with preview
 
 ### ✅ Emoji Reactions Implementation
 
-- **Quick emoji picker**: 👍 ❤️ 😂 😮 😢 🎉
-- **Toggle behavior**: Click to add, click again to remove
-- **Reaction counts**: Shows count with highlighted own reactions
-- **Tooltips**: Hover to see who reacted
-- **Works on replies**: Full reaction support in threads
-- **Real-time sync**: ReactionToggled event broadcasts changes
-- **Optimized updates**: Uses `setRelation()` for minimal re-renders
+-   **Quick emoji picker**: 👍 ❤️ 😂 😮 😢 🎉
+-   **Toggle behavior**: Click to add, click again to remove
+-   **Reaction counts**: Shows count with highlighted own reactions
+-   **Tooltips**: Hover to see who reacted
+-   **Works on replies**: Full reaction support in threads
+-   **Real-time sync**: ReactionToggled event broadcasts changes
+-   **Optimized updates**: Uses `setRelation()` for minimal re-renders
+
+### ✅ Read Receipts Implementation
+
+-   **message_reads** table to track who saw each message
+-   **Broadcast**: `ReadReceiptUpdated` event on presence channel
+-   **Auto-mark**: Mark latest message as read on load/send/receive
+-   **Replies supported**: Read receipts shown inside threads
+-   **Seen by others**: Excludes yourself from the "Seen by" list
+-   **Tooltips**: Hover to see the list of viewers
 
 ---
 

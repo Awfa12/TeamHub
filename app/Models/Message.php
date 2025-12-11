@@ -67,6 +67,47 @@ class Message extends Model
     }
 
     /**
+     * Get read receipts for this message
+     */
+    public function reads(): HasMany
+    {
+        return $this->hasMany(MessageRead::class);
+    }
+
+    /**
+     * Get read receipts (users who read this message)
+     */
+    public function getReadUsersAttribute(): Collection
+    {
+        return $this->reads
+            ->pluck('user.name')
+            ->filter();
+    }
+
+    public function getReadCountAttribute(): int
+    {
+        return $this->reads->count();
+    }
+
+    /**
+     * Read receipts excluding the current authenticated user (for UI display)
+     */
+    public function getReadUsersExcludingMeAttribute(): Collection
+    {
+        $me = auth()->id();
+        return $this->reads
+            ->filter(fn ($read) => $read->user_id !== $me)
+            ->pluck('user.name')
+            ->filter();
+    }
+
+    public function getReadCountExcludingMeAttribute(): int
+    {
+        $me = auth()->id();
+        return $this->reads->where('user_id', '!=', $me)->count();
+    }
+
+    /**
      * Get grouped reactions with counts and user info
      */
     public function getGroupedReactionsAttribute(): Collection

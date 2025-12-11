@@ -346,6 +346,8 @@ public function users(): BelongsToMany
 -   ✅ File attachments with MinIO storage
 -   ✅ Image previews with download links
 -   ✅ Thread replies (Slack-style flat threading)
+-   ✅ Emoji reactions (messages + replies)
+-   ✅ Read receipts (messages + replies, excludes self)
 -   ✅ Emoji reactions (👍 ❤️ 😂 😮 😢 🎉)
 
 ### Planned Features
@@ -534,7 +536,7 @@ teamhub/
 
 -   [x] Thread replies
 -   [x] Emoji reactions
--   [ ] Read receipts
+-   [x] Read receipts
 -   [ ] Message search
 -   [ ] Notifications
 
