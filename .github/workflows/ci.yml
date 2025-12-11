@@ -54,6 +54,8 @@ jobs:
       - name: Configure test env
         run: |
           php -r '$env=file_get_contents(".env"); $env=str_replace("DB_HOST=db","DB_HOST=127.0.0.1",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^DB_USERNAME=.*/m","DB_USERNAME=root",$env); file_put_contents(".env",$env);'
+          php -r '$env=file_get_contents(".env"); $env=preg_replace("/^DB_PASSWORD=.*/m","DB_PASSWORD=root",$env); file_put_contents(".env",$env);'
           php -r '$env=file_get_contents(".env"); $env=str_replace("REDIS_HOST=redis","REDIS_HOST=127.0.0.1",$env); file_put_contents(".env",$env);'
           php -r '$env=file_get_contents(".env"); $env=str_replace("QUEUE_CONNECTION=redis","QUEUE_CONNECTION=redis",$env); file_put_contents(".env",$env);'
           php -r '$env=file_get_contents(".env"); $env=str_replace("BROADCAST_CONNECTION=reverb","BROADCAST_CONNECTION=log",$env); file_put_contents(".env",$env);'
