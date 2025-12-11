@@ -346,10 +346,10 @@ public function users(): BelongsToMany
 -   ✅ File attachments with MinIO storage
 -   ✅ Image previews with download links
 -   ✅ Thread replies (Slack-style flat threading)
+-   ✅ Emoji reactions (👍 ❤️ 😂 😮 😢 🎉)
 
 ### Planned Features
 
--   ⬜ Emoji reactions
 -   ⬜ Read receipts
 -   ⬜ Message search
 
@@ -533,7 +533,7 @@ teamhub/
 ### Phase 3: Advanced Features 🔄
 
 -   [x] Thread replies
--   [ ] Emoji reactions
+-   [x] Emoji reactions
 -   [ ] Read receipts
 -   [ ] Message search
 -   [ ] Notifications

@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Events\MessageSent;
 use App\Events\MessageUpdated;
 use App\Events\MessageDeleted;
+use App\Events\ReactionToggled;
+use App\Models\Reaction;
 
 class ChannelChat extends Component
 {
@@ -32,6 +34,8 @@ class ChannelChat extends Component
     
     // Reply mode properties
     public ?int $replyingToMessageId = null;
+    
+    // Track which threads are expanded (using string keys for better Livewire serialization)
     public array $expandedThreads = [];
 
     public function mount(Team $team, Channel $channel)
@@ -41,7 +45,7 @@ class ChannelChat extends Component
         $this->teamId = $team->id;
         $this->channelId = $channel->id;
         // Only load parent messages (not replies) - lazy load replies when expanded
-        $this->chatMessages = Message::with('user')
+        $this->chatMessages = Message::with(['user', 'reactions.user'])
                         ->withCount('replies')
                         ->where('channel_id', $channel->id)
                         ->whereNull('parent_id')
@@ -108,6 +112,7 @@ class ChannelChat extends Component
         } else {
             // Add to main messages
             $message->replies_count = 0;
+            $message->setRelation('reactions', collect());
             $this->chatMessages->push($message->load('user'));
         }
 
@@ -143,6 +148,7 @@ class ChannelChat extends Component
                 return;
             }
             $message->replies_count = 0;
+            $message->setRelation('reactions', collect());
             $this->chatMessages->push($message);
         }
         
@@ -277,13 +283,106 @@ class ChannelChat extends Component
     public function toggleThread(int $messageId): void
     {
         if (isset($this->expandedThreads[$messageId])) {
-            unset($this->expandedThreads[$messageId]);
+            // Remove from array properly for Livewire reactivity
+            $expanded = $this->expandedThreads;
+            unset($expanded[$messageId]);
+            $this->expandedThreads = $expanded;
         } else {
             $this->expandedThreads[$messageId] = true;
-            // Load replies for this message (lazy loading)
+            // Always load replies when expanding (ensures fresh data)
             $this->chatMessages = $this->chatMessages->map(function ($msg) use ($messageId) {
-                if ($msg->id === $messageId && !$msg->relationLoaded('replies')) {
-                    $msg->load('replies.user');
+                if ($msg->id === $messageId) {
+                    $msg->load(['replies.user', 'replies.reactions.user']);
+                }
+                return $msg;
+            });
+        }
+    }
+
+    // Common emojis for quick reactions
+    public array $quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🎉'];
+
+    public function toggleReaction(int $messageId, string $emoji): void
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return;
+        }
+
+        $existingReaction = Reaction::where('message_id', $messageId)
+            ->where('user_id', $userId)
+            ->where('emoji', $emoji)
+            ->first();
+
+        $message = Message::find($messageId);
+        if (!$message) {
+            return;
+        }
+
+        if ($existingReaction) {
+            // Remove reaction
+            $existingReaction->delete();
+            $action = 'removed';
+        } else {
+            // Add reaction
+            Reaction::create([
+                'message_id' => $messageId,
+                'user_id' => $userId,
+                'emoji' => $emoji,
+            ]);
+            $action = 'added';
+        }
+
+        // Broadcast the reaction change
+        ReactionToggled::dispatch(
+            $messageId,
+            $this->channelId,
+            $emoji,
+            $action,
+            $userId,
+            auth()->user()->name
+        );
+
+        // Refresh reactions for this message
+        $this->refreshMessageReactions($messageId);
+    }
+
+    public function reactionToggledReceived(array $payload): void
+    {
+        // Skip if it's our own reaction (already updated locally)
+        if ($payload['user_id'] === auth()->id()) {
+            return;
+        }
+
+        $this->refreshMessageReactions($payload['message_id']);
+    }
+
+    private function refreshMessageReactions(int $messageId): void
+    {
+        $message = Message::with('reactions.user')->find($messageId);
+        if (!$message) {
+            return;
+        }
+        
+        // If it's a reply, update the reaction in the parent's replies collection
+        if ($message->parent_id) {
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($message) {
+                if ($msg->id === $message->parent_id && $msg->relationLoaded('replies')) {
+                    // Update just the specific reply's reactions
+                    $msg->replies = $msg->replies->map(function ($reply) use ($message) {
+                        if ($reply->id === $message->id) {
+                            $reply->setRelation('reactions', $message->reactions);
+                        }
+                        return $reply;
+                    });
+                }
+                return $msg;
+            });
+        } else {
+            // It's a parent message - just update its reactions
+            $this->chatMessages = $this->chatMessages->map(function ($msg) use ($message, $messageId) {
+                if ($msg->id === $messageId) {
+                    $msg->setRelation('reactions', $message->reactions);
                 }
                 return $msg;
             });

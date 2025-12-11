@@ -44,6 +44,10 @@
                     // Dispatch event for message deletion
                     window.dispatchEvent(new CustomEvent('echo-message-deleted', { detail: e }));
                 })
+                .listen('.reaction.toggled', (e) => {
+                    // Dispatch event for reaction toggle
+                    window.dispatchEvent(new CustomEvent('echo-reaction-toggled', { detail: e }));
+                })
                 .listenForWhisper('typing', (e) => {
                     component.userStartedTyping(e.userId, e.name);
                 });
@@ -121,6 +125,7 @@
     x-on:echo-message-received.window="$wire.messageReceived($event.detail)"
     x-on:echo-message-updated.window="$wire.messageUpdatedReceived($event.detail)"
     x-on:echo-message-deleted.window="$wire.messageDeletedReceived($event.detail)"
+    x-on:echo-reaction-toggled.window="$wire.reactionToggledReceived($event.detail)"
 >
 
     {{-- Online users indicator --}}
@@ -272,8 +277,55 @@
                             </div>
                         @endif
                         
-                        {{-- Reply button and thread info --}}
+                        {{-- Reactions display --}}
+                        @if($message->grouped_reactions->count() > 0)
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                @foreach($message->grouped_reactions as $reaction)
+                                    <button 
+                                        wire:click="toggleReaction({{ $message->id }}, '{{ $reaction['emoji'] }}')"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm transition
+                                            {{ $reaction['reacted_by_me'] ? 'bg-indigo-100 border border-indigo-300' : 'bg-gray-100 hover:bg-gray-200 border border-transparent' }}"
+                                        title="{{ implode(', ', $reaction['users']) }}"
+                                    >
+                                        <span>{{ $reaction['emoji'] }}</span>
+                                        <span class="text-xs {{ $reaction['reacted_by_me'] ? 'text-indigo-600 font-medium' : 'text-gray-600' }}">
+                                            {{ $reaction['count'] }}
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        {{-- Reply button, reactions, and thread info --}}
                         <div class="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100">
+                            {{-- Emoji picker --}}
+                            <div x-data="{ showPicker: false }" class="relative">
+                                <button 
+                                    @click="showPicker = !showPicker"
+                                    class="text-xs text-gray-400 hover:text-indigo-600 flex items-center gap-1 transition"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </button>
+                                <div 
+                                    x-show="showPicker" 
+                                    @click.away="showPicker = false"
+                                    x-transition
+                                    class="absolute bottom-full left-0 mb-1 p-1 bg-white rounded-lg shadow-lg border flex gap-1 z-10"
+                                >
+                                    @foreach($quickEmojis as $emoji)
+                                        <button 
+                                            wire:click="toggleReaction({{ $message->id }}, '{{ $emoji }}')"
+                                            @click="showPicker = false"
+                                            class="text-lg hover:bg-gray-100 rounded p-1 transition"
+                                        >
+                                            {{ $emoji }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+
                             <button 
                                 wire:click="startReply({{ $message->id }})"
                                 class="text-xs text-gray-400 hover:text-indigo-600 flex items-center gap-1 transition"
@@ -303,9 +355,9 @@
                         </div>
                         
                         {{-- Expanded thread replies --}}
-                        @if(isset($expandedThreads[$message->id]) && $message->relationLoaded('replies') && $message->replies->count() > 0)
+                        @if(isset($expandedThreads[$message->id]) && $message->replies_count > 0)
                             <div class="mt-3 ml-4 pl-4 border-l-2 border-indigo-200 space-y-3">
-                                @foreach($message->replies as $reply)
+                                @forelse($message->replies ?? [] as $reply)
                                     <div class="p-2 bg-gray-50 rounded {{ $reply->deleted_at ? 'opacity-60' : '' }}">
                                         @if($reply->deleted_at)
                                             <div class="text-gray-400 italic text-sm">This reply was deleted</div>
@@ -320,16 +372,6 @@
                                             @if($reply->body)
                                                 <div class="text-gray-800 text-sm whitespace-pre-line">{{ $reply->body }}</div>
                                             @endif
-                                            {{-- Reply to this reply (adds to same thread) --}}
-                                            <button 
-                                                wire:click="startReplyToReply({{ $message->id }}, {{ $reply->user_id }}, '{{ addslashes($reply->user->name ?? 'Unknown') }}')"
-                                                class="text-xs text-gray-400 hover:text-indigo-600 mt-1 flex items-center gap-1"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                                </svg>
-                                                Reply
-                                            </button>
                                             @if($reply->file_path)
                                                 <div class="mt-1">
                                                     @if($reply->is_image)
@@ -346,9 +388,72 @@
                                                     @endif
                                                 </div>
                                             @endif
+                                            
+                                            {{-- Reply reactions display --}}
+                                            @if($reply->grouped_reactions->count() > 0)
+                                                <div class="flex flex-wrap gap-1 mt-1">
+                                                    @foreach($reply->grouped_reactions as $reaction)
+                                                        <button 
+                                                            wire:click="toggleReaction({{ $reply->id }}, '{{ $reaction['emoji'] }}')"
+                                                            class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition
+                                                                {{ $reaction['reacted_by_me'] ? 'bg-indigo-100 border border-indigo-300' : 'bg-gray-100 hover:bg-gray-200 border border-transparent' }}"
+                                                            title="{{ implode(', ', $reaction['users']) }}"
+                                                        >
+                                                            <span>{{ $reaction['emoji'] }}</span>
+                                                            <span class="{{ $reaction['reacted_by_me'] ? 'text-indigo-600 font-medium' : 'text-gray-600' }}">
+                                                                {{ $reaction['count'] }}
+                                                            </span>
+                                                        </button>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
+                                            {{-- Reply actions: emoji picker + reply button --}}
+                                            <div class="flex items-center gap-2 mt-1">
+                                                {{-- Emoji picker for reply --}}
+                                                <div x-data="{ showPicker: false }" class="relative">
+                                                    <button 
+                                                        @click="showPicker = !showPicker"
+                                                        class="text-xs text-gray-400 hover:text-indigo-600 transition"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    </button>
+                                                    <div 
+                                                        x-show="showPicker" 
+                                                        @click.away="showPicker = false"
+                                                        x-transition
+                                                        class="absolute bottom-full left-0 mb-1 p-1 bg-white rounded-lg shadow-lg border flex gap-1 z-10"
+                                                    >
+                                                        @foreach($quickEmojis as $emoji)
+                                                            <button 
+                                                                wire:click="toggleReaction({{ $reply->id }}, '{{ $emoji }}')"
+                                                                @click="showPicker = false"
+                                                                class="text-sm hover:bg-gray-100 rounded p-0.5 transition"
+                                                            >
+                                                                {{ $emoji }}
+                                                            </button>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+
+                                                {{-- Reply to this reply --}}
+                                                <button 
+                                                    wire:click="startReplyToReply({{ $message->id }}, {{ $reply->user_id }}, '{{ addslashes($reply->user->name ?? 'Unknown') }}')"
+                                                    class="text-xs text-gray-400 hover:text-indigo-600 flex items-center gap-1"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                    </svg>
+                                                    Reply
+                                                </button>
+                                            </div>
                                         @endif
                                     </div>
-                                @endforeach
+                                @empty
+                                    <div class="text-sm text-gray-400 italic p-2">Loading replies...</div>
+                                @endforelse
                             </div>
                         @endif
                     @endif
