@@ -110,12 +110,12 @@ TeamHub is a **production-ready** team collaboration platform demonstrating mode
 
 ### Quality & Testing
 
-| Area                      | Status | Notes                                                         |
-| ------------------------- | ------ | ------------------------------------------------------------- |
-| Feature tests             | ✅     | Channel access, message flow (post/reply/archive block), mail notifications |
-| Auth/Profile (Breeze)     | ✅     | Login, register, email verify, password reset/update, profile update/delete |
-| Test harness              | ✅     | CSRF disabled in tests, queue sync, session/cache array drivers |
-| Command to run            | ✅     | `docker compose exec app php artisan test`                    |
+| Area                  | Status | Notes                                                                       |
+| --------------------- | ------ | --------------------------------------------------------------------------- |
+| Feature tests         | ✅     | Channel access, message flow (post/reply/archive block), mail notifications |
+| Auth/Profile (Breeze) | ✅     | Login, register, email verify, password reset/update, profile update/delete |
+| Test harness          | ✅     | CSRF disabled in tests, queue sync, session/cache array drivers             |
+| Command to run        | ✅     | `docker compose exec app php artisan test`                                  |
 
 ---
 
@@ -522,6 +522,7 @@ teamhub/
 | ------------------------------------------------------- | --------------------------------------- |
 | [`docs/progress.md`](progress.md)                       | Build progress and completed tasks      |
 | [`docs/real-time-messaging.md`](real-time-messaging.md) | Detailed real-time implementation guide |
+| [`docs/api.md`](api.md)                                 | HTTP routes, files, real-time channels  |
 
 ---
 
@@ -555,8 +556,8 @@ teamhub/
 
 ### Phase 4: Production Ready
 
--   [ ] Unit & feature tests
--   [ ] API documentation
+-   [x] Unit & feature tests
+-   [x] API/documentation (internal)
 -   [ ] Performance optimization
 -   [ ] Production deployment guide
 

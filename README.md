@@ -1,59 +1,160 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🛰️ TeamHub — Real-Time Team Collaboration Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+<div align="center">
 
-## About Laravel
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![Livewire](https://img.shields.io/badge/Livewire-3-4E56A6?style=for-the-badge)
+![Reverb](https://img.shields.io/badge/Reverb-WebSockets-8A2BE2?style=for-the-badge)
+![Redis](https://img.shields.io/badge/Redis-Cache%2FQueue-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Slack-inspired, multi-tenant team chat with real-time messaging, presence, typing indicators, threads, reactions, read receipts, search, notifications, and secure file sharing.**
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+[Overview](#-overview) • [Features](#-key-features) • [Tech](#-tech-stack) • [Install](#-installation) • [Docs](#-docs) • [Testing](#-testing) • [Roadmap](#-roadmap)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+</div>
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🎯 Overview
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+TeamHub is a production-ready collaboration platform built with Laravel 12 + Livewire 3, using Reverb for WebSockets, Redis for queues/sessions/cache, MySQL for persistence, and MinIO for file storage. It ships with strong RBAC, presence channels, threading, reactions, read receipts, search, and email/browser notifications.
 
-## Laravel Sponsors
+### What makes it special
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+-   ⚡ Real-time everything: presence channels, whispers for typing, optimistic UI
+-   🧵 Threads & replies: Slack-style flat threading with @mention pre-fill
+-   🔐 RBAC & privacy: owner/admin/member roles, private channels, archive read-only
+-   📂 Files & previews: MinIO-backed uploads with secure Laravel proxy download
+-   🔔 Notifications: Mailpit emails for replies/@mentions + in-app mention toasts
+-   🔍 Search & jump: channel-scoped search with “Go to message” navigation
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## ✨ Key Features
 
-## Contributing
+-   Messaging UX: optimistic send, auto-scroll, input clear, inline edit, soft delete + confirmation modal
+-   Presence & typing: who’s online, typing indicators with debounced whispers
+-   Threads & replies: lazy-loaded replies, jump-to, reply-to-reply with @prefill
+-   Reactions: emoji toggle (messages + replies), tooltips, grouped counts
+-   Read receipts: per message/reply, excludes self, hover list
+-   Files: Livewire uploads → MinIO, image previews, secure downloads
+-   Search: channel-scoped, replies included, “Go to” jump
+-   Notifications: email (replies/@mentions, opt-in flag), browser toasts for mentions
+-   Archive handling: archived channels hidden by default; toggle to show; send blocked server/UI
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 🛠 Tech Stack
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+**Backend:** Laravel 12, PHP 8.4, MySQL 8.0, Redis, Reverb (WebSockets)  
+**Frontend:** Blade + Livewire 3, Alpine.js (bundled), Tailwind CSS, Echo + Pusher transport  
+**Storage:** MinIO (S3-compatible) via dedicated disk, Laravel file proxy for secure downloads  
+**DevOps:** Docker Compose (app, nginx, db, redis, queue, reverb, mailpit, minio)
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 🏗 Architecture (high level)
 
-## License
+```
+Browser (Blade + Livewire + Alpine)
+   │  Echo join/whisper (presence: channel.{id})
+   ▼
+Laravel 12 app (Reverb broadcaster, Redis queue/cache/session)
+   │  Events: MessageSent/Updated/Deleted, ReactionToggled, ReadReceiptUpdated
+   ▼
+MySQL (teams, channels, messages, reactions, reads)
+MinIO (file storage via Laravel disk + proxy routes)
+Reverb (WebSocket server)  Redis (queue + cache + session)
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## 🚀 Installation
+
+```bash
+git clone <repo>
+cd teamhub
+cp .env.example .env              # ensure hosts/ports match docker-compose
+docker compose up -d
+docker compose exec app composer install
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
+npm install
+npm run dev                       # or npm run build for production
+```
+
+Services:
+
+-   App: http://localhost:8080
+-   Mailpit: http://localhost:8025
+-   MinIO Console: http://localhost:9001
+-   Reverb WS: ws://localhost:8081
+
+---
+
+## 📁 Project Structure (high level)
+
+-   `app/Livewire/ChannelChat.php` — real-time chat component
+-   `app/Events/*` — broadcasts (sent/updated/deleted/reaction/read)
+-   `app/Http/Controllers/MessageController.php` — message create, archive guard, notifications
+-   `app/Policies/*` — team/channel RBAC
+-   `database/seeders/TeamSeeder.php` — rich seed data (users/teams/channels/messages)
+-   `resources/views/livewire/channel-chat.blade.php` — chat UI (typing, presence, threads, reactions, reads, files)
+-   `docker-compose.yml` & `docker/` — app, nginx, db, redis, queue, reverb, mailpit, minio
+-   `docs/` — progress, overview, real-time guide, API quickref
+
+---
+
+## 🧪 Testing
+
+-   Full suite: `docker compose exec app php artisan test`
+-   Coverage highlights: channel access, message flow (post/reply/archive block), mail notifications, Breeze auth/profile flows
+-   Harness: CSRF disabled in tests, queue sync, session/cache array drivers; factories for Team/Channel/MessageRead
+
+---
+
+## 📚 Docs
+
+-   Progress log: `docs/progress.md`
+-   Architecture & data model: `docs/project-overview.md`
+-   Real-time messaging guide: `docs/real-time-messaging.md`
+-   API & integration quickref: `docs/api.md`
+
+---
+
+## 👥 Sample Accounts (seeded)
+
+All passwords: `password`
+
+-   alice@example.com (owner/admin across teams)
+-   bob@example.com (owner/admin across teams)
+-   charlie@example.com, diana@example.com, eve@example.com, frank@example.com
+-   owner@example.com / admin@example.com / member@example.com (Demo Team roles)
+
+---
+
+## 🏁 Production Notes (current focus)
+
+-   Env: `QUEUE_CONNECTION=redis`, `BROADCAST_CONNECTION=reverb`, `CACHE_STORE=redis`, `SESSION_DRIVER=redis`, Mailpit/SMTP set
+-   Indexes to add: `messages(channel_id, created_at)`, `reactions(message_id,user_id)`, `message_reads(message_id,user_id)`
+-   Health checks: queue/reverb ping endpoints (planned)
+-   Build: `php artisan config:cache route:cache view:cache` + `npm run build`
+
+---
+
+## 🗺 Roadmap (summary)
+
+-   Phase 1: Foundation ✅
+-   Phase 2: Enhanced Messaging ✅
+-   Phase 3: Advanced Features ✅
+-   Phase 4: Production hardening 🔄 (tests done; perf/docs/deploy in progress)
+
+---
+
+## 📄 License
+
+Open-sourced for educational and portfolio purposes.

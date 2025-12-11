@@ -250,7 +250,7 @@ Issues encountered and resolved during development:
 | ---------------------------- | -------- | ---------- |
 | Unit/feature tests           | High     | ✅ Added   |
 | Auth flows (Breeze) passing  | High     | ✅ Added   |
-| API/documentation            | Medium   | ⏳ Planned |
+| API/documentation            | Medium   | ✅ Added   |
 | Performance optimization     | Medium   | ⏳ Planned |
 | Production deployment guide  | Medium   | ⏳ Planned |
 | Health checks (queue/reverb) | Low      | ⏳ Planned |
