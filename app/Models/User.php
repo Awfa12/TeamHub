@@ -35,6 +35,9 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $casts = [
+        'notification_emails' => 'boolean',
+    ];
     /**
      * Get the attributes that should be cast.
      *

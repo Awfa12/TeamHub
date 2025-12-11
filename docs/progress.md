@@ -14,12 +14,12 @@
 
 ## 📊 Progress Overview
 
-| Phase                           | Status         | Description                               |
-| ------------------------------- | -------------- | ----------------------------------------- |
-| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging  |
-| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files    |
-| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search ✅ |
-| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy               |
+| Phase                           | Status         | Description                                                    |
+| ------------------------------- | -------------- | -------------------------------------------------------------- |
+| **Phase 1: Foundation**         | ✅ Complete    | Docker, Auth, Teams, Channels, Messaging                       |
+| **Phase 2: Enhanced Messaging** | ✅ Complete    | Typing, Presence, Edits, Delete, Files                         |
+| **Phase 3: Advanced Features**  | 🔄 In Progress | Threads ✅, Reactions ✅, Read ✅, Search ✅, Notifications ✅ |
+| **Phase 4: Production**         | ⏳ Planned     | Tests, Optimization, Deploy                                    |
 
 ---
 
@@ -187,7 +187,7 @@ Issues encountered and resolved during development:
 | Emoji reactions           | Medium   | ✅ Complete |
 | Read receipts             | Medium   | ✅ Complete |
 | Message search            | Medium   | ✅ Complete |
-| Notifications             | Low      | ⏳ Planned  |
+| Notifications             | Low      | ✅ Complete |
 | Channel archive filtering | Low      | ⏳ Planned  |
 
 ### ✅ Thread Replies Implementation
@@ -226,6 +226,13 @@ Issues encountered and resolved during development:
 -   **Debounced input**: 500ms debounce + Enter to search
 -   **Results panel**: Shows latest 20 matches with author, time, reply badge
 -   **Replies included**: Indicates reply target user when applicable
+
+### ✅ Notifications Implementation
+
+-   **Email alerts**: Replies and @mentions email the recipient (Mailpit)
+-   **User toggle**: Persistent `notification_emails` flag on User
+-   **Queue-backed**: Uses queue worker + Mailpit SMTP (port 1025)
+-   **Browser toasts**: In-app toasts for @mentions (non-sender)
 
 ---
 

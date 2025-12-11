@@ -6,6 +6,7 @@
         currentUserId: {{ auth()->id() }},
         currentUserName: '{{ auth()->user()->name }}',
         channelId: {{ $channelId }},
+        toasts: [],
         
         // Delete confirmation modal
         showDeleteModal: false,
@@ -35,6 +36,14 @@
                 .listen('.message.sent', (e) => {
                     // Dispatch event to trigger Livewire update
                     window.dispatchEvent(new CustomEvent('echo-message-received', { detail: e }));
+
+                    // Show toast if this message mentions current user and isn't from self
+                    const body = (e.body || '').toLowerCase();
+                    const senderId = e.user?.id ?? null;
+                    const myName = this.currentUserName ? this.currentUserName.toLowerCase() : '';
+                    if (senderId !== this.currentUserId && myName && body.includes('@' + myName)) {
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { text: `${e.user?.name ?? 'Someone'} mentioned you` } }));
+                    }
                 })
                 .listen('.message.updated', (e) => {
                     // Dispatch event for message update
@@ -77,6 +86,14 @@
                     });
                 });
             }
+        },
+
+        addToast(text) {
+            const id = Date.now() + Math.random();
+            this.toasts.push({ id, text });
+            setTimeout(() => {
+                this.toasts = this.toasts.filter(t => t.id !== id);
+            }, 4000);
         },
         
         get typingNames() {
@@ -145,16 +162,17 @@
     x-on:echo-reaction-toggled.window="$wire.reactionToggledReceived($event.detail)"
     x-on:echo-read-receipt.window="$wire.readReceiptReceived($event.detail)"
     x-on:scroll-to-message.window="scrollToElement($event.detail.id)"
+    x-on:toast.window="addToast($event.detail.text)"
 >
 
-    {{-- Search bar --}}
+    {{-- Search bar + notification toggle --}}
     <div class="mb-4 bg-white p-3 rounded shadow-sm">
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             <input 
                 type="text"
                 wire:model.debounce.500ms="searchTerm"
                 wire:keydown.enter.prevent="searchMessages"
-                class="flex-1 border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-indigo-200"
+                class="flex-1 min-w-[220px] border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-indigo-200"
                 placeholder="Search messages in this channel..."
             />
             <button 
@@ -170,6 +188,14 @@
                 class="px-3 py-2 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition"
             >
                 Clear
+            </button>
+            <button
+                type="button"
+                wire:click="toggleNotificationEmails"
+                class="px-3 py-2 text-xs rounded border transition
+                    {{ $notificationEmailsEnabled ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100' : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100' }}"
+            >
+                {{ $notificationEmailsEnabled ? 'Email alerts ON' : 'Email alerts OFF' }}
             </button>
         </div>
         @if(strlen($searchTerm) > 1)
@@ -771,4 +797,19 @@
         </div>
     </div>
 
+    {{-- Toasts --}}
+    <div class="fixed bottom-4 right-4 space-y-2 z-50">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0 translate-y-2"
+                class="bg-gray-900 text-white text-sm px-4 py-2 rounded shadow-lg"
+                x-text="toast.text"
+            ></div>
+        </template>
+    </div>
 </div>

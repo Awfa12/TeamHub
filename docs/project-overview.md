@@ -349,6 +349,7 @@ public function users(): BelongsToMany
 -   ✅ Emoji reactions (messages + replies)
 -   ✅ Read receipts (messages + replies, excludes self)
 -   ✅ Message search (channel-scoped, replies included)
+-   ✅ Notifications (email replies/@mentions with opt-in, browser toasts for mentions)
 -   ✅ Emoji reactions (👍 ❤️ 😂 😮 😢 🎉)
 
 ### Planned Features
@@ -539,7 +540,7 @@ teamhub/
 -   [x] Emoji reactions
 -   [x] Read receipts
 -   [x] Message search
--   [ ] Notifications
+-   [x] Notifications
 
 ### Phase 4: Production Ready
 

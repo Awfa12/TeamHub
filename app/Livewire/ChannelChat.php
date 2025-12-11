@@ -17,6 +17,9 @@ use App\Events\ReactionToggled;
 use App\Models\Reaction;
 use App\Events\ReadReceiptUpdated;
 use App\Models\MessageRead;
+use App\Jobs\SendMessageNotification;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ChannelChat extends Component
 {
@@ -31,6 +34,7 @@ class ChannelChat extends Component
     public $file;
     public string $searchTerm = '';
     public $searchResults = [];
+    public bool $notificationEmailsEnabled = true;
     
     // Edit mode properties
     public ?int $editingMessageId = null;
@@ -49,6 +53,7 @@ class ChannelChat extends Component
         $this->channel = $channel;
         $this->teamId = $team->id;
         $this->channelId = $channel->id;
+        $this->notificationEmailsEnabled = (bool) (auth()->user()->notification_emails ?? true);
         // Only load parent messages (not replies) - lazy load replies when expanded
         $this->chatMessages = Message::with(['user', 'reactions.user', 'reads.user'])
                         ->withCount('replies')
@@ -116,11 +121,38 @@ class ChannelChat extends Component
                 return $msg;
             });
             $this->expandedThreads[$this->replyingToMessageId] = true;
+
+            // Email notify parent author if enabled and not self
+            $parent = Message::with('user')->find($this->replyingToMessageId);
+            if ($parent && $parent->user_id !== $userId && ($parent->user->notification_emails ?? false)) {
+                SendMessageNotification::dispatch($message->id, $parent->user_id);
+            }
         } else {
             // Add to main messages
             $message->replies_count = 0;
             $message->setRelation('reactions', collect());
             $this->chatMessages->push($message->load('user'));
+        }
+
+        // Mention email notifications (@username) to team members
+        if (! empty($this->body)) {
+            preg_match_all('/@([\\p{L}\\p{N}_\\.\\-]+)/u', $this->body, $matches);
+            $mentionTokens = collect($matches[1] ?? [])->map(fn($n) => mb_strtolower($n))->unique()->values();
+
+            if ($mentionTokens->isNotEmpty()) {
+                $teamUsers = $this->team->users; // lazy-load once
+                $mentionedUsers = $teamUsers->filter(function ($user) use ($mentionTokens) {
+                    $name = mb_strtolower($user->name ?? '');
+                    $emailLocal = mb_strtolower(strtok($user->email ?? '', '@'));
+                    return $mentionTokens->contains($name) || ($emailLocal && $mentionTokens->contains($emailLocal));
+                });
+
+                foreach ($mentionedUsers as $mentioned) {
+                    if ($mentioned->id !== $userId && ($mentioned->notification_emails ?? false)) {
+                        SendMessageNotification::dispatch($message->id, $mentioned->id);
+                    }
+                }
+            }
         }
 
         // Clear the input and scroll to bottom
@@ -452,6 +484,18 @@ class ChannelChat extends Component
     {
         $this->searchTerm = '';
         $this->searchResults = [];
+    }
+
+    public function toggleNotificationEmails(): void
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return;
+        }
+
+        $user->notification_emails = ! $user->notification_emails;
+        $user->save();
+        $this->notificationEmailsEnabled = (bool) $user->notification_emails;
     }
 
     public function jumpToMessage(int $messageId, ?int $parentId = null): void
